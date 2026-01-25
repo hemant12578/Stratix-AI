@@ -1,5 +1,8 @@
 # Stratix AI 🚀 | Empowering Everyone with Data Intelligence
 **Submitted to: AI for All Challenge**
+QUICK VIEW⚡
+frontend link- https://stratixai.netlify.app/
+video link- https://drive.google.com/file/d/1_0EuliehQ-hhFRwzS5eDYWBW86Vw3vOI/view?usp=drivesdk
 
 Stratix AI is built on the vision of **Democratizing Data**. Traditionally, high-level market research and data engineering were limited to big corporations. Stratix AI breaks this barrier, providing small founders and researchers with tools that turn raw public data into strategic goldmines.
 
