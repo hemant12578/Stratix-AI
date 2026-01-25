@@ -1,4 +1,4 @@
-import google.generativeai as genai
+import google.genai as genai
 import json
 from typing import Dict, Any, List
 from app.core.config import settings
@@ -18,26 +18,17 @@ from app.core.prompts import (
 )
 
 # Initialize Gemini with Google API Key
-try:
-    api_key = settings.GOOGLE_API_KEY or settings.GEMINI_API_KEY
-    if api_key and api_key != "your-api-key":
-        genai.configure(api_key=api_key)
-    else:
-        print("Warning: Gemini API key not configured")
-except Exception as e:
-    print(f"Warning: Gemini API configuration failed: {e}")
+api_key = settings.GOOGLE_API_KEY or settings.GEMINI_API_KEY
+if not api_key or api_key == "your-api-key":
+    print("Warning: Gemini API key not configured")
 
 def get_model(model_name: str = "gemini-1.5-flash"):
     """Get Gemini model instance"""
     api_key = settings.GOOGLE_API_KEY or settings.GEMINI_API_KEY
     if not api_key or api_key == "your-api-key":
         raise ValueError("Google API key not configured. Please set GOOGLE_API_KEY environment variable.")
-    # Configure if not already configured or if key changed
-    try:
-        genai.configure(api_key=api_key)
-    except:
-        pass
-    return genai.GenerativeModel(model_name)
+    # Create client with API key
+    return genai.Client(api_key=api_key).models.get(model_name)
 
 def analyze_requirement(user_input: str) -> Dict[str, Any]:
     """Analyze user's natural language requirement and extract structured data"""

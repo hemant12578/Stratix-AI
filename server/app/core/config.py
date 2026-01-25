@@ -1,8 +1,11 @@
 import os
 from typing import Optional
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 
 class Settings(BaseSettings):
+    model_config = ConfigDict(extra='ignore')
+    
     # Gemini API / Google AI API
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "AIzaSyB_LX0uuilCy_J9scaHWMEYo_qWd-QeX08")
     GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "AIzaSyB_LX0uuilCy_J9scaHWMEYo_qWd-QeX08")
@@ -21,8 +24,5 @@ class Settings(BaseSettings):
     
     # Redis (optional for caching)
     REDIS_URL: Optional[str] = os.getenv("REDIS_URL", "")
-    
-    class Config:
-        env_file = ".env"
 
 settings = Settings()

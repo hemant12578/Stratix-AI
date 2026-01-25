@@ -7,7 +7,7 @@ import httpx
 from typing import List, Dict, Any, Optional
 import pandas as pd
 from app.core.config import settings
-import google.generativeai as genai
+import google.genai as genai
 
 # Initialize Gemini with API key (will be configured when first used)
 def get_gemini_model():
