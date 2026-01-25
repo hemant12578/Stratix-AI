@@ -1,0 +1,15 @@
+# Render.com deployment configuration
+# Deploy FastAPI backend to Render instead of Vercel
+
+# For Render, you need:
+# 1. Connect GitHub repository to Render.com
+# 2. Create new Web Service
+# 3. Build Command: pip install -r server/requirements.txt
+# 4. Start Command: uvicorn server.main:app --host 0.0.0.0 --port $PORT
+# 5. Root Directory: . (or leave empty)
+# 6. Environment Variables:
+#    - FRONTEND_URL=https://your-frontend.netlify.app
+#    - GOOGLE_API_KEY=your_key
+
+# File: render.yaml (optional)
+# This is just documentation - use Render web dashboard instead
