@@ -2,14 +2,15 @@ import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 
-// Your Firebase configuration
+// Your Firebase configuration - Updated for Stratix-AI project
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyA876uaMMOxUaF-T0IoYnpCx1Z_C_yy40g",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "dataforge-ai-fcfb1.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "dataforge-ai-fcfb1",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "dataforge-ai-fcfb1.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "216173018359",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:216173018359:web:28e249f7916e94fe27a7f2"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAbG3EPU0STqoFxrt3TLL7r07wKZXuGkzA",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "stratix-ai.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "stratix-ai",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "stratix-ai.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "349488126851",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:349488126851:web:4ec922eb268fa1024934b6",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-F1NC7ZWPDW"
 }
 
 // Initialize Firebase
