@@ -3,8 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import os
+import sys
 import uuid
 from typing import Optional, List
+from pathlib import Path
+
+# Add the server directory to sys.path for imports
+# This works whether running from project root or from server directory
+server_dir = Path(__file__).parent.absolute()
+sys.path.insert(0, str(server_dir))
 
 from app.api import analyze, search, process, download, datasets, user, strategy
 from app.core.config import settings

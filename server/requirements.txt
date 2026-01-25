@@ -3,4 +3,8 @@ uvicorn[standard]==0.24.0
 python-multipart==0.0.6
 aiofiles==23.2.1
 httpx==0.25.2
-google-generativeai==0.3.1
+google-generativeai==0.7.0
+mcp==0.1.0
+protobuf==4.25.8
+pydantic-settings==2.0.0
+kagglehub==0.4.1
