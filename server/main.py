@@ -5,17 +5,27 @@ from pydantic import BaseModel
 import os
 import uuid
 from typing import Optional, List
-import uvicorn
 
 from app.api import analyze, search, process, download, datasets, user, strategy
 from app.core.config import settings
 
 app = FastAPI(title="Stratix AI API", version="1.0.0")
 
-# CORS middleware
+# CORS middleware - Updated for production
+allowed_origins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://stratix-ai.netlify.app",  # Your Netlify frontend URL
+]
+
+# Allow origin from environment variable for flexibility
+frontend_url = os.getenv("FRONTEND_URL")
+if frontend_url:
+    allowed_origins.append(frontend_url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,6 +47,3 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
