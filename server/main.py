@@ -8,6 +8,8 @@ import uuid
 from typing import Optional, List
 from pathlib import Path
 
+os.environ.setdefault("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python")
+
 # Add the server directory to sys.path for imports
 # This works whether running from project root or from server directory
 server_dir = Path(__file__).parent.absolute()
@@ -54,3 +56,7 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

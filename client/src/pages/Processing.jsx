@@ -18,6 +18,22 @@ function Processing() {
         setStatus(response.data)
 
         if (response.data.status === 'completed') {
+          try {
+            const stats = response.data.stats || {}
+            const metadata = response.data.metadata || {}
+            const entry = {
+              jobId,
+              status: 'completed',
+              samples: stats.train_samples || 0,
+              qualityScore: metadata.data_quality?.overall_quality || null,
+              completedAt: new Date().toISOString()
+            }
+            const stored = JSON.parse(localStorage.getItem('localHistory') || '[]')
+            const filtered = stored.filter(item => item.jobId !== jobId)
+            localStorage.setItem('localHistory', JSON.stringify([entry, ...filtered]))
+          } catch (e) {
+            console.error('Failed to store history:', e)
+          }
           setTimeout(() => {
             navigate(`/download/${jobId}`)
           }, 2000)

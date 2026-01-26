@@ -115,9 +115,9 @@ function Download() {
       <AuroraBackground />
       <ParticlesBackground count={50} />
       
-      <div className="relative z-10 container mx-auto px-4 py-8">
+      <div className="relative z-10 container mx-auto px-4 py-6 sm:py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
           <button
             onClick={() => navigate('/')}
             className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
@@ -151,7 +151,7 @@ function Download() {
         </FadeInText>
 
         {/* Stats Grid */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
           <FadeInText delay={200}>
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700 hover:border-primary-500/50 transition-all hover:scale-105 hover:shadow-lg hover:shadow-primary-500/20">
               <div className="flex items-center gap-3 mb-2">
@@ -183,7 +183,7 @@ function Download() {
 
         {/* Tabs: Files / Training Code */}
         <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 mb-8">
-          <div className="flex border-b border-gray-700">
+          <div className="flex border-b border-gray-700 overflow-x-auto">
             <button
               className={`px-4 sm:px-6 py-3 text-sm font-medium flex items-center gap-2 ${
                 activeTab === 'files'
@@ -211,7 +211,7 @@ function Download() {
             </button>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {activeTab === 'files' && (
               <>
                 <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -257,15 +257,15 @@ function Download() {
 
             {activeTab === 'code' && (
               <div>
-                <div className="flex items-center justify-between mb-4 gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
                   <div className="flex items-center gap-2">
                     <Code className="w-5 h-5 text-green-400" />
                     <h3 className="text-lg font-semibold">Dev-Ready Training Script</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <button
                       onClick={() => handleDownload('code')}
-                      className="px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs sm:text-sm flex items-center gap-1"
+                      className="px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs sm:text-sm flex items-center justify-center gap-1"
                     >
                       <DownloadIcon className="w-4 h-4" />
                       Download .py
@@ -299,7 +299,7 @@ function Download() {
         </div>
 
         {/* Download Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <button
             onClick={() => handleDownload('zip')}
             disabled={downloading}
@@ -310,14 +310,14 @@ function Download() {
           </button>
           <button
             onClick={() => handleDownload('train')}
-            className="px-6 py-4 rounded-xl bg-gray-700 hover:bg-gray-600 transition-colors flex items-center gap-2"
+            className="px-6 py-4 rounded-xl bg-gray-700 hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
           >
             <DownloadIcon className="w-4 h-4" />
             Train
           </button>
           <button
             onClick={() => handleDownload('test')}
-            className="px-6 py-4 rounded-xl bg-gray-700 hover:bg-gray-600 transition-colors flex items-center gap-2"
+            className="px-6 py-4 rounded-xl bg-gray-700 hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
           >
             <DownloadIcon className="w-4 h-4" />
             Test

@@ -27,7 +27,7 @@ class ProcessRequest(BaseModel):
 # Store job status
 job_status = {}
 
-def process_data_task(job_id: str, dataset_ids: List[str], requirements: Dict[str, Any]):
+async def process_data_task(job_id: str, dataset_ids: List[str], requirements: Dict[str, Any]):
     """Background task to process datasets"""
     try:
         job_status[job_id] = {"status": "processing", "progress": 0, "message": "Starting..."}
@@ -38,7 +38,7 @@ def process_data_task(job_id: str, dataset_ids: List[str], requirements: Dict[st
         
         dfs = []
         for ds_id in dataset_ids:
-            df = load_dataset_by_id(ds_id)
+            df = await load_dataset_by_id(ds_id)
             if df is not None and not df.empty:
                 dfs.append(df)
         
@@ -109,6 +109,8 @@ def process_data_task(job_id: str, dataset_ids: List[str], requirements: Dict[st
         ml_framework = requirements.get("ml_framework", "sklearn")
         task_type = requirements.get("task_type", "classification")
         training_code = generate_training_code(metadata, ml_framework, task_type)
+        if isinstance(training_code, str):
+            training_code = training_code.replace("\ufeff", "")
         
         # Step 8: Save files
         job_status[job_id]["message"] = "Saving files..."
@@ -117,34 +119,44 @@ def process_data_task(job_id: str, dataset_ids: List[str], requirements: Dict[st
         os.makedirs(settings.STORAGE_DIR, exist_ok=True)
         base_path = os.path.join(settings.STORAGE_DIR, job_id)
         
-        # Save CSV files
+        # Save output files
         output_format = requirements.get("output_format", "csv")
-        if output_format == "csv":
+        if output_format in ["csv", "both"]:
             train_df.to_csv(f"{base_path}_train.csv", index=False)
             test_df.to_csv(f"{base_path}_test.csv", index=False)
             if not val_df.empty:
                 val_df.to_csv(f"{base_path}_val.csv", index=False)
-        else:  # JSON
+        if output_format in ["json", "both"]:
             train_df.to_json(f"{base_path}_train.json", orient="records", indent=2)
             test_df.to_json(f"{base_path}_test.json", orient="records", indent=2)
             if not val_df.empty:
                 val_df.to_json(f"{base_path}_val.json", orient="records", indent=2)
         
         # Save metadata
-        with open(f"{base_path}_metadata.json", "w") as f:
-            json.dump(metadata, f, indent=2)
+        with open(f"{base_path}_metadata.json", "w", encoding="utf-8") as f:
+            json.dump(metadata, f, indent=2, ensure_ascii=False)
         
         # Save training code
-        with open(f"{base_path}_training_code.py", "w") as f:
+        with open(f"{base_path}_training_code.py", "w", encoding="utf-8") as f:
             f.write(training_code)
         
         # Create ZIP file
         zip_path = f"{base_path}.zip"
         with zipfile.ZipFile(zip_path, 'w') as zipf:
-            zipf.write(f"{base_path}_train.{output_format}", f"train.{output_format}")
-            zipf.write(f"{base_path}_test.{output_format}", f"test.{output_format}")
-            if not val_df.empty:
-                zipf.write(f"{base_path}_val.{output_format}", f"val.{output_format}")
+            if output_format == "both":
+                zipf.write(f"{base_path}_train.csv", "train.csv")
+                zipf.write(f"{base_path}_test.csv", "test.csv")
+                if not val_df.empty:
+                    zipf.write(f"{base_path}_val.csv", "val.csv")
+                zipf.write(f"{base_path}_train.json", "train.json")
+                zipf.write(f"{base_path}_test.json", "test.json")
+                if not val_df.empty:
+                    zipf.write(f"{base_path}_val.json", "val.json")
+            else:
+                zipf.write(f"{base_path}_train.{output_format}", f"train.{output_format}")
+                zipf.write(f"{base_path}_test.{output_format}", f"test.{output_format}")
+                if not val_df.empty:
+                    zipf.write(f"{base_path}_val.{output_format}", f"val.{output_format}")
             zipf.write(f"{base_path}_metadata.json", "metadata.json")
             zipf.write(f"{base_path}_training_code.py", "training_code.py")
         
@@ -155,8 +167,8 @@ def process_data_task(job_id: str, dataset_ids: List[str], requirements: Dict[st
             "message": "Processing complete!",
             "files": {
                 "zip": zip_path,
-                "train": f"{base_path}_train.{output_format}",
-                "test": f"{base_path}_test.{output_format}",
+                "train": f"{base_path}_train.csv" if output_format == "both" else f"{base_path}_train.{output_format}",
+                "test": f"{base_path}_test.csv" if output_format == "both" else f"{base_path}_test.{output_format}",
                 "metadata": f"{base_path}_metadata.json",
                 "code": f"{base_path}_training_code.py"
             },

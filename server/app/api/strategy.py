@@ -23,6 +23,10 @@ async def analyze_strategy(request: StrategyRequest) -> Dict[str, Any]:
   try:
     result = analyze_market_strategy(request.query)
     return {"status": "success", "data": result}
+  except ValueError as e:
+    raise HTTPException(status_code=503, detail=str(e))
   except Exception as e:
-    raise HTTPException(status_code=500, detail=str(e))
+    import traceback
+    print("Strategy Hub error:", traceback.format_exc())
+    raise HTTPException(status_code=500, detail=f"Strategy error: {e}")
 

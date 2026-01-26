@@ -7,8 +7,8 @@ class Settings(BaseSettings):
     model_config = ConfigDict(extra='ignore')
     
     # Gemini API / Google AI API
-    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "AIzaSyB_LX0uuilCy_J9scaHWMEYo_qWd-QeX08")
-    GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "AIzaSyB_LX0uuilCy_J9scaHWMEYo_qWd-QeX08")
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")
     
     # Storage
     STORAGE_DIR: str = "./data/temp"
@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     
     # AI API Configuration
     AI_API_BASE_URL: str = os.getenv("AI_API_BASE_URL", "")
-    AI_API_KEY: str = os.getenv("AI_API_KEY", "AIzaSyB_LX0uuilCy_J9scaHWMEYo_qWd-QeX08")
+    AI_API_KEY: str = os.getenv("AI_API_KEY", "")
     
     # Data sources
     KAGGLE_USERNAME: Optional[str] = os.getenv("KAGGLE_USERNAME", "")

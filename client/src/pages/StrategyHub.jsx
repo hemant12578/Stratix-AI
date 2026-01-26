@@ -24,7 +24,8 @@ function StrategyHub() {
       setResult(response.data.data)
     } catch (err) {
       console.error('Strategy analysis failed:', err)
-      setError('Analysis failed. Please try again in a moment.')
+      const serverMsg = err?.response?.data?.detail
+      setError(serverMsg || 'Analysis failed. Please try again in a moment.')
     } finally {
       setLoading(false)
     }
@@ -107,7 +108,7 @@ function StrategyHub() {
               <button
                 type="submit"
                 disabled={loading || !query.trim()}
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold flex items-center gap-2 shadow-lg shadow-primary-500/40"
+                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold flex items-center justify-center gap-2 shadow-lg shadow-primary-500/40"
               >
                 <Lightbulb className="w-4 h-4" />
                 {loading ? 'Analyzing...' : 'Analyze Strategy'}

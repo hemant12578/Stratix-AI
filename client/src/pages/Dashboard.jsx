@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { 
   Search, Database, Download, History, Settings, 
   User, LogOut, CreditCard, Zap, TrendingUp, FileText,
-  Calendar, BarChart3, Sparkles
+  Calendar, BarChart3, Sparkles, Menu, X
 } from 'lucide-react'
 import { AuroraBackground, ParticlesBackground } from '../components/AnimatedBackground'
 import { FadeInText, GradientText } from '../components/AnimatedText'
@@ -18,22 +18,34 @@ function Dashboard() {
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     // Load user history from API
     const fetchHistory = async () => {
       try {
+        const localHistory = JSON.parse(localStorage.getItem('localHistory') || '[]')
         const token = currentUser ? await currentUser.getIdToken() : null
         const response = await axios.get('/api/user/history', {
           headers: token ? {
             Authorization: `Bearer ${token}`
           } : {}
         })
-        setHistory(response.data.history || [])
+        const apiHistory = response.data.history || []
+        const merged = [...localHistory, ...apiHistory]
+        const unique = []
+        const seen = new Set()
+        for (const item of merged) {
+          const key = item.jobId || item.id || `${item.datasetId || ''}-${item.completedAt || ''}`
+          if (seen.has(key)) continue
+          seen.add(key)
+          unique.push(item)
+        }
+        setHistory(unique)
       } catch (error) {
         console.error('Failed to load history:', error)
-        // Set empty history on error
-        setHistory([])
+        const localHistory = JSON.parse(localStorage.getItem('localHistory') || '[]')
+        setHistory(localHistory)
       } finally {
         setLoading(false)
       }
@@ -43,9 +55,35 @@ function Dashboard() {
       fetchHistory()
     } else {
       setLoading(false)
-      setHistory([])
+      const localHistory = JSON.parse(localStorage.getItem('localHistory') || '[]')
+      setHistory(localHistory)
     }
   }, [currentUser])
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        const localHistory = JSON.parse(localStorage.getItem('localHistory') || '[]')
+        if (localHistory.length) {
+          setHistory(prev => {
+            const merged = [...localHistory, ...prev]
+            const unique = []
+            const seen = new Set()
+            for (const item of merged) {
+              const key = item.jobId || item.id || `${item.datasetId || ''}-${item.completedAt || ''}`
+              if (seen.has(key)) continue
+              seen.add(key)
+              unique.push(item)
+            }
+            return unique
+          })
+        }
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [])
 
   const handleLogout = async () => {
     try {
@@ -71,10 +109,31 @@ function Dashboard() {
       <ParticlesBackground count={30} />
 
       <div className="relative z-10 flex">
+        {sidebarOpen && (
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden fixed inset-0 bg-black/50 z-20"
+            aria-label="Close sidebar"
+          />
+        )}
+
         {/* Sidebar */}
-        <aside className="w-64 bg-gray-800/50 backdrop-blur-sm border-r border-gray-700 min-h-screen p-6">
-          <div className="mb-8">
+        <aside
+          className={`fixed lg:static inset-y-0 left-0 z-30 w-72 lg:w-64 bg-gray-800/80 lg:bg-gray-800/50 backdrop-blur-sm border-r border-gray-700 min-h-screen p-6 transform transition-transform duration-200 ease-out ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          } lg:translate-x-0`}
+        >
+          <div className="mb-8 flex items-center justify-between">
             <img src="/assets/transparent.png" alt="Stratix AI" className="h-8 w-auto" />
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700/30"
+              aria-label="Close menu"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
           {/* User Info */}
@@ -111,6 +170,7 @@ function Dashboard() {
                   } else {
                     setActiveTab(item.id)
                   }
+                  setSidebarOpen(false)
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                   activeTab === item.id
@@ -135,7 +195,22 @@ function Dashboard() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          <div className="lg:hidden flex items-center justify-between mb-6">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 rounded-lg bg-gray-800/50 border border-gray-700 text-gray-200 hover:bg-gray-800"
+              aria-label="Open menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-2">
+              <img src="/assets/transparent.png" alt="Stratix AI" className="h-7 w-auto" />
+              <span className="text-sm font-semibold text-gray-200">Dashboard</span>
+            </div>
+            <div className="w-10" />
+          </div>
           {/* Header */}
           <div className="mb-8">
             <FadeInText delay={0}>
@@ -185,7 +260,12 @@ function Dashboard() {
                     <div className="flex items-center justify-between mb-2">
                       <Sparkles className="w-8 h-8 text-green-400" />
                       <span className="text-2xl font-bold text-green-400">
-                        {Math.round(history.filter(h => h.qualityScore).reduce((sum, h) => sum + h.qualityScore, 0) / history.filter(h => h.qualityScore).length) || 0}
+                        {(() => {
+                          const scores = history.filter(h => h.qualityScore)
+                          const total = scores.reduce((sum, h) => sum + h.qualityScore, 0)
+                          const avg = scores.length ? total / scores.length : 0
+                          return Math.round(avg) || 0
+                        })()}
                       </span>
                     </div>
                     <p className="text-sm text-gray-400">Avg Quality Score</p>
@@ -228,7 +308,7 @@ function Dashboard() {
                       >
                         <div className="flex-1">
                           <p className="font-medium">{item.query}</p>
-                          <p className="text-sm text-gray-400">{item.datasets.join(', ')}</p>
+                          <p className="text-sm text-gray-400">{(item.datasets || []).join(', ')}</p>
                         </div>
                         <div className="flex items-center gap-4">
                           <span className="text-sm text-gray-400">{item.date}</span>
@@ -271,7 +351,7 @@ function Dashboard() {
                               <div className="flex-1">
                                 <p className="font-medium mb-1">{item.query}</p>
                                 <p className="text-sm text-gray-400 mb-2">
-                                  Datasets: {item.datasets.join(', ')}
+                                  Datasets: {(item.datasets || []).join(', ')}
                                 </p>
                                 <div className="flex items-center gap-4 text-sm">
                                   <span className="text-gray-400 flex items-center gap-1">

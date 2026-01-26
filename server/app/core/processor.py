@@ -141,7 +141,14 @@ class DataProcessor:
                     scaler = StandardScaler() if method == "standard_scaler" else None
                     if scaler:
                         self.df[numeric_cols] = scaler.fit_transform(self.df[numeric_cols])
-            
+
+            # Normalize unhashable types (lists/dicts) before dedupe
+            for col in self.df.columns:
+                if self.df[col].dtype == 'object':
+                    self.df[col] = self.df[col].apply(
+                        lambda v: json.dumps(v, ensure_ascii=False) if isinstance(v, (list, dict)) else v
+                    )
+
             # Final cleanup: remove duplicates
             self.df = self.df.drop_duplicates()
             
@@ -150,6 +157,11 @@ class DataProcessor:
         except Exception as e:
             # If cleaning fails, return basic cleaned version
             self.df = self.df.dropna()
+            for col in self.df.columns:
+                if self.df[col].dtype == 'object':
+                    self.df[col] = self.df[col].apply(
+                        lambda v: json.dumps(v, ensure_ascii=False) if isinstance(v, (list, dict)) else v
+                    )
             self.df = self.df.drop_duplicates()
             return self.df
     

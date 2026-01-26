@@ -8,20 +8,135 @@ from typing import List, Dict, Any, Optional
 import pandas as pd
 from app.core.config import settings
 import google.genai as genai
+from google.genai import types
 
-# Initialize Gemini with API key (will be configured when first used)
-def get_gemini_model():
-    """Get configured Gemini model"""
+def _get_client() -> Optional[genai.Client]:
     api_key = settings.GOOGLE_API_KEY or settings.GEMINI_API_KEY
-    if not api_key or api_key == "your-api-key":
-        raise ValueError("Google API key not configured. Please set GOOGLE_API_KEY environment variable.")
-    genai.configure(api_key=api_key)
-    return genai.GenerativeModel('gemini-1.5-flash')
+    if not api_key:
+        return None
+    return genai.Client(api_key=api_key)
+
+
+def _curated_public_catalog() -> List[Dict[str, Any]]:
+    return [
+        {
+            "id": "hf:imdb",
+            "name": "IMDB Movie Reviews",
+            "source": "huggingface",
+            "description": "Large Movie Review Dataset for binary sentiment classification.",
+            "sample_count": 50000,
+            "quality_score": 90,
+            "license": "Unknown",
+            "tags": ["nlp", "sentiment", "classification"],
+            "features": ["text", "label"],
+            "url": "https://huggingface.co/datasets/imdb",
+            "match_score": 85,
+            "match_reasons": ["Popular public dataset"],
+            "concerns": [],
+        },
+        {
+            "id": "hf:ag_news",
+            "name": "AG News",
+            "source": "huggingface",
+            "description": "News topic classification dataset with 4 classes.",
+            "sample_count": 120000,
+            "quality_score": 88,
+            "license": "Unknown",
+            "tags": ["nlp", "classification"],
+            "features": ["text", "label"],
+            "url": "https://huggingface.co/datasets/ag_news",
+            "match_score": 82,
+            "match_reasons": ["Popular public dataset"],
+            "concerns": [],
+        },
+        {
+            "id": "hf:tweet_eval",
+            "name": "TweetEval",
+            "source": "huggingface",
+            "description": "Tweet classification benchmark with multiple tasks.",
+            "sample_count": 70000,
+            "quality_score": 85,
+            "license": "Unknown",
+            "tags": ["nlp", "tweets", "classification"],
+            "features": ["text", "label"],
+            "url": "https://huggingface.co/datasets/tweet_eval",
+            "match_score": 80,
+            "match_reasons": ["Popular public dataset"],
+            "concerns": [],
+        },
+    ]
+
+
+async def _search_huggingface_api(query: str, limit: int) -> List[Dict[str, Any]]:
+    """Search Hugging Face public dataset index (no API key required)."""
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            resp = await client.get(
+                "https://huggingface.co/api/datasets",
+                params={"search": query, "limit": max(1, min(limit, 50))},
+            )
+            resp.raise_for_status()
+
+        items = resp.json()
+        results: List[Dict[str, Any]] = []
+        for it in items[:limit]:
+            ds_id = it.get("id")
+            if not ds_id:
+                continue
+            results.append(
+                {
+                    "id": f"hf:{ds_id}",
+                    "name": ds_id,
+                    "source": "huggingface",
+                    "description": it.get("description") or "",
+                    "sample_count": it.get("downloads") or 0,
+                    "quality_score": 80,
+                    "license": "Unknown",
+                    "tags": it.get("tags") or [],
+                    "features": [],
+                    "url": f"https://huggingface.co/datasets/{ds_id}",
+                    "match_score": 80,
+                    "match_reasons": ["Matched via Hugging Face search"],
+                    "concerns": [],
+                }
+            )
+
+        return results
+    except Exception:
+        return []
+
+
+async def _search_public_sources(query: str, limit: int) -> List[Dict[str, Any]]:
+    """Real search without Gemini API key."""
+    q = (query or "").lower().strip()
+
+    curated = _curated_public_catalog()
+    curated_scored = []
+    for item in curated:
+        hay = " ".join([item.get("name", ""), item.get("description", ""), " ".join(item.get("tags", []))]).lower()
+        if q and q not in hay:
+            continue
+        curated_scored.append(item)
+
+    hf = await _search_huggingface_api(query, limit=limit)
+    combined = curated_scored + hf
+
+    seen = set()
+    unique = []
+    for item in combined:
+        if item.get("id") in seen:
+            continue
+        seen.add(item.get("id"))
+        unique.append(item)
+
+    return unique[:limit]
 
 async def search_datasets(query: str, limit: int = 20) -> List[Dict[str, Any]]:
     """Search for datasets using Gemini AI"""
     try:
-        model = get_gemini_model()
+        client = _get_client()
+        if client is None:
+            return await _search_public_sources(query, limit)
         
         prompt = f"""You are a dataset search expert. Search for real ML datasets matching this query: "{query}"
 
@@ -50,12 +165,13 @@ Return up to {limit} real datasets. Sort by match_score descending.
 Return ONLY valid JSON array, no explanations or markdown.
 """
         
-        response = model.generate_content(
-            prompt,
-            generation_config={
-                "temperature": 0.2,
-                "response_mime_type": "application/json"
-            }
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.2,
+                response_mime_type="application/json",
+            ),
         )
         
         import json
@@ -102,9 +218,7 @@ Return ONLY valid JSON array, no explanations or markdown.
         print(f"Response text: {response_text[:500] if 'response_text' in locals() else 'N/A'}")
         raise Exception(f"Invalid JSON response from AI: {str(e)}")
     except ValueError as e:
-        if "API key" in str(e):
-            raise Exception("Google API key not configured. Please set GOOGLE_API_KEY in environment variables.")
-        raise Exception(f"Configuration error: {str(e)}")
+        return await _search_public_sources(query, limit)
     except Exception as e:
         import traceback
         print(f"Search error: {e}")
@@ -114,16 +228,45 @@ Return ONLY valid JSON array, no explanations or markdown.
 async def load_dataset_by_id(dataset_id: str) -> Optional[pd.DataFrame]:
     """Load a dataset by ID - uses HuggingFace or direct URL"""
     try:
-        # Try HuggingFace first if it's an HF dataset
-        if dataset_id.startswith("hf_") or "/" in dataset_id:
-            try:
-                from datasets import load_dataset
-                hf_name = dataset_id.replace("hf_", "").replace("_", "/")
-                dataset = load_dataset(hf_name, split="train")
-                df = dataset.to_pandas()
-                return df
-            except:
-                pass
+        # HuggingFace dataset ID format: hf:<repo_id>
+        if dataset_id.startswith("hf:"):
+            hf_id = dataset_id.replace("hf:", "", 1)
+            split_name = "train"
+            config_name = "default"
+
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                try:
+                    splits_resp = await client.get(
+                        "https://datasets-server.huggingface.co/splits",
+                        params={"dataset": hf_id},
+                    )
+                    splits_resp.raise_for_status()
+                    splits_payload = splits_resp.json()
+
+                    splits = splits_payload.get("splits") or []
+                    if splits:
+                        config_name = splits[0].get("config") or config_name
+                        split_name = splits[0].get("split") or split_name
+                except Exception:
+                    pass
+
+                # datasets-server provides fast sample rows without installing datasets library
+                resp = await client.get(
+                    "https://datasets-server.huggingface.co/first-rows",
+                    params={
+                        "dataset": hf_id,
+                        "split": split_name,
+                        "config": config_name,
+                    },
+                )
+                resp.raise_for_status()
+                payload = resp.json()
+
+            rows = payload.get("rows") or []
+            # Each row has {"row": {...}}
+            records = [r.get("row", {}) for r in rows if isinstance(r, dict)]
+            df = pd.DataFrame.from_records(records)
+            return df
         
         # Try to load from URL if dataset_id is a URL
         if dataset_id.startswith("http"):
@@ -140,8 +283,10 @@ async def load_dataset_by_id(dataset_id: str) -> Optional[pd.DataFrame]:
                     df = pd.read_json(io.StringIO(response.text))
                     return df
         
-        # Use Gemini to get dataset URL/info
-        model = get_gemini_model()
+        client = _get_client()
+        if client is None:
+            return None
+
         prompt = f"""
 Get download URL or information for dataset ID: {dataset_id}
 
@@ -155,12 +300,13 @@ If you can't find it, return {{"error": "Dataset not found"}}
 Return ONLY valid JSON.
 """
         
-        response = model.generate_content(
-            prompt,
-            generation_config={
-                "temperature": 0.2,
-                "response_mime_type": "application/json"
-            }
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.2,
+                response_mime_type="application/json",
+            ),
         )
         
         import json
