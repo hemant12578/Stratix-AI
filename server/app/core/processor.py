@@ -167,6 +167,12 @@ class DataProcessor:
     
     def create_splits(self, train_ratio: float = 0.7, test_ratio: float = 0.2, val_ratio: float = 0.1) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Create train/test/validation splits"""
+        n = len(self.df)
+        if n == 0:
+            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+        if n == 1:
+            return self.df.copy(), pd.DataFrame(), pd.DataFrame()
+
         # Ensure ratios sum to 1
         total = train_ratio + test_ratio + val_ratio
         train_ratio /= total
@@ -174,20 +180,39 @@ class DataProcessor:
         val_ratio /= total
         
         # First split: train vs (test + val)
-        train_df, temp_df = train_test_split(
-            self.df,
-            test_size=(1 - train_ratio),
-            random_state=42
-        )
-        
-        # Second split: test vs val
-        if val_ratio > 0:
-            test_size = test_ratio / (test_ratio + val_ratio)
-            test_df, val_df = train_test_split(
-                temp_df,
+        test_size = max(0.0, min(1.0, (1 - train_ratio)))
+        # Ensure at least 1 row remains in train when possible
+        if n > 1 and test_size > 0 and int(round(n * (1 - test_size))) < 1:
+            test_size = (n - 1) / n
+        if test_size == 0:
+            train_df = self.df.copy()
+            temp_df = pd.DataFrame()
+        else:
+            train_df, temp_df = train_test_split(
+                self.df,
                 test_size=test_size,
                 random_state=42
             )
+        
+        # Second split: test vs val
+        if temp_df is None or len(temp_df) == 0:
+            return train_df, pd.DataFrame(), pd.DataFrame()
+
+        if val_ratio > 0 and len(temp_df) > 1:
+            second_test_size = test_ratio / (test_ratio + val_ratio) if (test_ratio + val_ratio) > 0 else 1.0
+            second_test_size = max(0.0, min(1.0, second_test_size))
+            # Ensure at least 1 row remains in test when possible
+            if len(temp_df) > 1 and second_test_size > 0 and int(round(len(temp_df) * (1 - second_test_size))) < 1:
+                second_test_size = (len(temp_df) - 1) / len(temp_df)
+            if second_test_size == 0:
+                test_df = temp_df.copy()
+                val_df = pd.DataFrame()
+            else:
+                test_df, val_df = train_test_split(
+                    temp_df,
+                    test_size=second_test_size,
+                    random_state=42
+                )
         else:
             test_df = temp_df
             val_df = pd.DataFrame()

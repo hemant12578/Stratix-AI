@@ -32,7 +32,13 @@ function Download() {
   const handleDownload = async (fileType = 'zip') => {
     setDownloading(true)
     try {
-      const response = await axios.get(`/api/download/${jobId}?file_type=${fileType}`, {
+      const outputFormat = status?.output_format || status?.outputFormat || ''
+      const isJsonPreferred = outputFormat === 'json'
+      const preferParam = (fileType === 'train' || fileType === 'test')
+        ? `&format=${isJsonPreferred ? 'json' : 'csv'}`
+        : ''
+
+      const response = await axios.get(`/api/download/${jobId}?file_type=${fileType}${preferParam}`, {
         responseType: 'blob'
       })
 
@@ -108,6 +114,10 @@ function Download() {
 
   const stats = status.stats || {}
   const metadata = status.metadata || {}
+  const outputFormat = status.output_format || status.outputFormat || 'csv'
+  const trainName = outputFormat === 'json' ? 'train.json' : 'train.csv'
+  const testName = outputFormat === 'json' ? 'test.json' : 'test.csv'
+  const bothLabel = outputFormat === 'both' ? ' (CSV + JSON)' : ''
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 relative overflow-hidden">
@@ -224,14 +234,14 @@ function Download() {
                       <div className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg">
                         <div className="flex items-center gap-3">
                           <FileText className="w-5 h-5 text-primary-400" />
-                          <span>train.csv / train.json</span>
+                          <span>{outputFormat === 'both' ? 'train.csv / train.json' : trainName}{bothLabel}</span>
                         </div>
                         <span className="text-gray-400">{stats.train_samples?.toLocaleString()} samples</span>
                       </div>
                       <div className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg">
                         <div className="flex items-center gap-3">
                           <FileText className="w-5 h-5 text-purple-400" />
-                          <span>test.csv / test.json</span>
+                          <span>{outputFormat === 'both' ? 'test.csv / test.json' : testName}{bothLabel}</span>
                         </div>
                         <span className="text-gray-400">{stats.test_samples?.toLocaleString()} samples</span>
                       </div>

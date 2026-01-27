@@ -165,6 +165,7 @@ async def process_data_task(job_id: str, dataset_ids: List[str], requirements: D
             "status": "completed",
             "progress": 100,
             "message": "Processing complete!",
+            "output_format": output_format,
             "files": {
                 "zip": zip_path,
                 "train": f"{base_path}_train.csv" if output_format == "both" else f"{base_path}_train.{output_format}",

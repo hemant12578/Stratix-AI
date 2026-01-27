@@ -6,7 +6,7 @@ from app.core.config import settings
 router = APIRouter()
 
 @router.get("/download/{job_id}")
-async def download_file(job_id: str, file_type: str = "zip"):
+async def download_file(job_id: str, file_type: str = "zip", format: str = ""):
     """Download processed files"""
     base_path = os.path.join(settings.STORAGE_DIR, job_id)
     
@@ -16,7 +16,14 @@ async def download_file(job_id: str, file_type: str = "zip"):
     elif file_type == "train":
         csv_path = f"{base_path}_train.csv"
         json_path = f"{base_path}_train.json"
-        if os.path.exists(csv_path):
+        prefer = (format or "").lower()
+        if prefer == "json" and os.path.exists(json_path):
+            file_path = json_path
+            filename = "train.json"
+        elif prefer == "csv" and os.path.exists(csv_path):
+            file_path = csv_path
+            filename = "train.csv"
+        elif os.path.exists(csv_path):
             file_path = csv_path
             filename = "train.csv"
         else:
@@ -25,7 +32,14 @@ async def download_file(job_id: str, file_type: str = "zip"):
     elif file_type == "test":
         csv_path = f"{base_path}_test.csv"
         json_path = f"{base_path}_test.json"
-        if os.path.exists(csv_path):
+        prefer = (format or "").lower()
+        if prefer == "json" and os.path.exists(json_path):
+            file_path = json_path
+            filename = "test.json"
+        elif prefer == "csv" and os.path.exists(csv_path):
+            file_path = csv_path
+            filename = "test.csv"
+        elif os.path.exists(csv_path):
             file_path = csv_path
             filename = "test.csv"
         else:

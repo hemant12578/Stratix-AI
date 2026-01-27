@@ -5,16 +5,101 @@ Integrates with Google AI API and Gemini for dataset search
 import os
 import httpx
 from typing import List, Dict, Any, Optional
+import json
 import pandas as pd
 from app.core.config import settings
 import google.genai as genai
 from google.genai import types
 
+
+async def _dataset_server_first_available_split(hf_id: str) -> Optional[Dict[str, str]]:
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            resp = await client.get(
+                "https://datasets-server.huggingface.co/splits",
+                params={"dataset": hf_id},
+            )
+            resp.raise_for_status()
+            payload = resp.json()
+            splits = payload.get("splits") or []
+            if not splits:
+                return None
+            first = splits[0]
+            config = first.get("config")
+            split = first.get("split")
+            if not config or not split:
+                return None
+            return {"config": config, "split": split}
+    except Exception:
+        return None
+
 def _get_client() -> Optional[genai.Client]:
-    api_key = settings.GOOGLE_API_KEY or settings.GEMINI_API_KEY
+    api_key = (
+        settings.ML_GOOGLE_API_KEY
+        or settings.ML_GEMINI_API_KEY
+        or settings.GOOGLE_API_KEY
+        or settings.GEMINI_API_KEY
+    )
     if not api_key:
         return None
     return genai.Client(api_key=api_key)
+
+
+def _normalize_model_name(name: str) -> str:
+    n = (name or "").strip()
+    if not n:
+        return ""
+    if "/" in n:
+        n = n.split("/")[-1].strip()
+    return n
+
+
+def _expand_model_variants(name: str) -> List[str]:
+    base = _normalize_model_name(name)
+    if not base:
+        return []
+    return [base, f"models/{base}"]
+
+
+def _model_candidates() -> List[str]:
+    candidates: List[str] = []
+    if getattr(settings, "ML_GEMINI_MODEL", ""):
+        candidates.extend(_expand_model_variants(settings.ML_GEMINI_MODEL))
+    for m in [
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-latest",
+        "gemini-1.5-pro",
+        "gemini-1.5-pro-latest",
+    ]:
+        candidates.extend(_expand_model_variants(m))
+    deduped: List[str] = []
+    seen = set()
+    for m in candidates:
+        if m in seen:
+            continue
+        seen.add(m)
+        deduped.append(m)
+    return deduped
+
+
+async def _generate_content_with_fallback(client: genai.Client, prompt: str, want_json: bool) -> str:
+    last_err: Exception | None = None
+    for model_name in _model_candidates():
+        try:
+            cfg = types.GenerateContentConfig(temperature=0.2)
+            if want_json:
+                cfg = types.GenerateContentConfig(temperature=0.2, response_mime_type="application/json")
+            resp = client.models.generate_content(model=model_name, contents=prompt, config=cfg)
+            return resp.text
+        except Exception as e:
+            last_err = e
+            msg = str(e)
+            if any(k in msg for k in ["NOT_FOUND", "not found", "404"]):
+                continue
+            if any(k in msg for k in ["INVALID_ARGUMENT", "unexpected model name format"]):
+                continue
+            raise
+    raise Exception(f"No supported Gemini model found for this API key. Last error: {last_err}")
 
 
 def _curated_public_catalog() -> List[Dict[str, Any]]:
@@ -79,9 +164,15 @@ async def _search_huggingface_api(query: str, limit: int) -> List[Dict[str, Any]
 
         items = resp.json()
         results: List[Dict[str, Any]] = []
-        for it in items[:limit]:
+        # Validate against datasets-server so processing doesn't fail later with 404
+        for it in items:
+            if len(results) >= limit:
+                break
             ds_id = it.get("id")
             if not ds_id:
+                continue
+            server_split = await _dataset_server_first_available_split(ds_id)
+            if server_split is None:
                 continue
             results.append(
                 {
@@ -165,17 +256,9 @@ Return up to {limit} real datasets. Sort by match_score descending.
 Return ONLY valid JSON array, no explanations or markdown.
 """
         
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.2,
-                response_mime_type="application/json",
-            ),
-        )
-        
-        import json
-        response_text = response.text.strip()
+        response_text = await _generate_content_with_fallback(client, prompt, want_json=True)
+
+        response_text = response_text.strip()
         
         # Remove markdown code blocks if present
         if response_text.startswith("```json"):
@@ -212,18 +295,12 @@ Return ONLY valid JSON array, no explanations or markdown.
         
         return results[:limit]
         
-    except json.JSONDecodeError as e:
-        import traceback
-        print(f"JSON Decode Error: {e}")
-        print(f"Response text: {response_text[:500] if 'response_text' in locals() else 'N/A'}")
-        raise Exception(f"Invalid JSON response from AI: {str(e)}")
-    except ValueError as e:
+    except json.JSONDecodeError:
         return await _search_public_sources(query, limit)
-    except Exception as e:
-        import traceback
-        print(f"Search error: {e}")
-        print(traceback.format_exc())
-        raise Exception(f"Error searching datasets with AI: {str(e)}")
+    except ValueError:
+        return await _search_public_sources(query, limit)
+    except Exception:
+        return await _search_public_sources(query, limit)
 
 async def load_dataset_by_id(dataset_id: str) -> Optional[pd.DataFrame]:
     """Load a dataset by ID - uses HuggingFace or direct URL"""
@@ -231,10 +308,8 @@ async def load_dataset_by_id(dataset_id: str) -> Optional[pd.DataFrame]:
         # HuggingFace dataset ID format: hf:<repo_id>
         if dataset_id.startswith("hf:"):
             hf_id = dataset_id.replace("hf:", "", 1)
-            split_name = "train"
-            config_name = "default"
-
             async with httpx.AsyncClient(timeout=30.0) as client:
+                splits: List[Dict[str, Any]] = []
                 try:
                     splits_resp = await client.get(
                         "https://datasets-server.huggingface.co/splits",
@@ -242,25 +317,45 @@ async def load_dataset_by_id(dataset_id: str) -> Optional[pd.DataFrame]:
                     )
                     splits_resp.raise_for_status()
                     splits_payload = splits_resp.json()
-
                     splits = splits_payload.get("splits") or []
-                    if splits:
-                        config_name = splits[0].get("config") or config_name
-                        split_name = splits[0].get("split") or split_name
                 except Exception:
-                    pass
+                    splits = []
 
-                # datasets-server provides fast sample rows without installing datasets library
-                resp = await client.get(
-                    "https://datasets-server.huggingface.co/first-rows",
-                    params={
-                        "dataset": hf_id,
-                        "split": split_name,
-                        "config": config_name,
-                    },
-                )
-                resp.raise_for_status()
-                payload = resp.json()
+                # Try first available split+config; retry if datasets-server returns 404
+                tried: List[Dict[str, str]] = []
+                candidates: List[Dict[str, str]] = []
+                for s in splits[:10]:
+                    cfg = s.get("config")
+                    spl = s.get("split")
+                    if cfg and spl:
+                        candidates.append({"config": cfg, "split": spl})
+                if not candidates:
+                    candidates = [{"config": "default", "split": "train"}]
+
+                payload = None
+                last_exc: Optional[Exception] = None
+                for cand in candidates:
+                    if cand in tried:
+                        continue
+                    tried.append(cand)
+                    try:
+                        resp = await client.get(
+                            "https://datasets-server.huggingface.co/first-rows",
+                            params={
+                                "dataset": hf_id,
+                                "split": cand["split"],
+                                "config": cand["config"],
+                            },
+                        )
+                        resp.raise_for_status()
+                        payload = resp.json()
+                        break
+                    except Exception as e:
+                        last_exc = e
+                        payload = None
+
+                if payload is None:
+                    raise Exception(f"datasets-server failed for {hf_id}: {last_exc}")
 
             rows = payload.get("rows") or []
             # Each row has {"row": {...}}
@@ -300,17 +395,9 @@ If you can't find it, return {{"error": "Dataset not found"}}
 Return ONLY valid JSON.
 """
         
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.2,
-                response_mime_type="application/json",
-            ),
-        )
-        
-        import json
-        data = json.loads(response.text)
+        response_text = await _generate_content_with_fallback(client, prompt, want_json=True)
+
+        data = json.loads(response_text)
         
         if "url" in data:
             async with httpx.AsyncClient() as client:
