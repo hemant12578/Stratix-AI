@@ -1,7 +1,11 @@
 # Stratix AI 🚀 | Empowering Everyone with Data Intelligence
 **Submitted to: AI for All Challenge**
+
 QUICK VIEW⚡
+
 frontend link- https://stratixai.netlify.app/
+
+
 backend deploy process 🙏😅
 
 video link- https://drive.google.com/file/d/1_0EuliehQ-hhFRwzS5eDYWBW86Vw3vOI/view?usp=drivesdk
