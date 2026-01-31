@@ -39,7 +39,8 @@ function Download() {
         : ''
 
       const response = await axios.get(`/api/download/${jobId}?file_type=${fileType}${preferParam}`, {
-        responseType: 'blob'
+        responseType: 'blob',
+        headers: fileType === 'zip' ? {} : { Accept: 'application/json' }
       })
 
       const url = window.URL.createObjectURL(new Blob([response.data]))

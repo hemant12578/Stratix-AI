@@ -140,25 +140,37 @@ async def process_data_task(job_id: str, dataset_ids: List[str], requirements: D
         with open(f"{base_path}_training_code.py", "w", encoding="utf-8") as f:
             f.write(training_code)
         
-        # Create ZIP file
+        # Create ZIP file with proper structure
         zip_path = f"{base_path}.zip"
-        with zipfile.ZipFile(zip_path, 'w') as zipf:
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Add data files with proper names
             if output_format == "both":
-                zipf.write(f"{base_path}_train.csv", "train.csv")
-                zipf.write(f"{base_path}_test.csv", "test.csv")
-                if not val_df.empty:
+                if os.path.exists(f"{base_path}_train.csv"):
+                    zipf.write(f"{base_path}_train.csv", "train.csv")
+                if os.path.exists(f"{base_path}_test.csv"):
+                    zipf.write(f"{base_path}_test.csv", "test.csv")
+                if not val_df.empty and os.path.exists(f"{base_path}_val.csv"):
                     zipf.write(f"{base_path}_val.csv", "val.csv")
-                zipf.write(f"{base_path}_train.json", "train.json")
-                zipf.write(f"{base_path}_test.json", "test.json")
-                if not val_df.empty:
+                if os.path.exists(f"{base_path}_train.json"):
+                    zipf.write(f"{base_path}_train.json", "train.json")
+                if os.path.exists(f"{base_path}_test.json"):
+                    zipf.write(f"{base_path}_test.json", "test.json")
+                if not val_df.empty and os.path.exists(f"{base_path}_val.json"):
                     zipf.write(f"{base_path}_val.json", "val.json")
             else:
-                zipf.write(f"{base_path}_train.{output_format}", f"train.{output_format}")
-                zipf.write(f"{base_path}_test.{output_format}", f"test.{output_format}")
-                if not val_df.empty:
+                # Single format (csv or json)
+                if os.path.exists(f"{base_path}_train.{output_format}"):
+                    zipf.write(f"{base_path}_train.{output_format}", f"train.{output_format}")
+                if os.path.exists(f"{base_path}_test.{output_format}"):
+                    zipf.write(f"{base_path}_test.{output_format}", f"test.{output_format}")
+                if not val_df.empty and os.path.exists(f"{base_path}_val.{output_format}"):
                     zipf.write(f"{base_path}_val.{output_format}", f"val.{output_format}")
-            zipf.write(f"{base_path}_metadata.json", "metadata.json")
-            zipf.write(f"{base_path}_training_code.py", "training_code.py")
+            
+            # Add metadata and code files
+            if os.path.exists(f"{base_path}_metadata.json"):
+                zipf.write(f"{base_path}_metadata.json", "metadata.json")
+            if os.path.exists(f"{base_path}_training_code.py"):
+                zipf.write(f"{base_path}_training_code.py", "training_code.py")
         
         # Update job status
         job_status[job_id] = {
