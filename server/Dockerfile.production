@@ -1,5 +1,5 @@
 # Use Python 3.11 slim image
-# Railway deployment - Stratix AI Backend - FINAL FIX
+# Railway deployment - Stratix AI Backend - FINAL FIX v3 - CACHE BUST
 FROM python:3.11-slim
 
 # Set working directory
