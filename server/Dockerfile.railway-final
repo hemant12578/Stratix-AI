@@ -26,6 +26,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application code
 COPY server/ .
 
+# Change to server directory
+WORKDIR /app/server
+
 # Create data directory
 RUN mkdir -p data/temp
 
