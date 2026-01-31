@@ -1,5 +1,5 @@
 # Use Python 3.11 slim image
-# Railway deployment - Stratix AI Backend
+# Railway deployment - Stratix AI Backend - Fixed v2
 FROM python:3.11-slim
 
 # Set working directory
