@@ -455,4 +455,13 @@ If Stratix AI helped you or inspired you, please:
 
 *Star ⭐ this project if you believe in accessible AI for all!*
 
+
+© 2026 Hemant. All rights reserved.
+
+Licensed under MIT License.
+While this code is open source, 
+Stratix AI™ is a trademark of Hemant.
+
+Commercial use requires attribution.
+
 </div>
