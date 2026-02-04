@@ -1,70 +1,68 @@
-# 🚀 Stratix AI | Democratizing Data Intelligence
-
+🚀 Stratix AI | Democratizing Data Intelligence
 <div align="center">
 
-![Stratix AI Logo](logo.jpeg)
+🌟 High-End AI Tools: Now for Everyone, Not Just Corporates 🌟
 
-[![Frontend Demo](https://img.shields.io/badge/Demo-Live-success?style=for-the-badge&logo=vercel)](https://stratixai.netlify.app/)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
-[![Made with Love](https://img.shields.io/badge/Made%20with-❤️-red?style=for-the-badge)](https://github.com/hemant12578)
-
-**🌟 Enterprise-Grade AI Tools for Everyone 🌟**
-
-*Making professional data intelligence accessible to students, startups, and small businesses*
-
-[Try Demo](https://stratixai.netlify.app/) • [Documentation](#-getting-started) • [Report Bug](https://github.com/hemant12578/Stratix-AI/issues)
+Try Demo • Report Bug • Watch on YouTube
 
 </div>
 
----
+📊 Project Overview & Architecture
+Stratix AI एक ऐसा प्लेटफॉर्म है जो डेटा इंटेलिजेंस और मशीन लर्निंग को आम लोगों (छात्रों और छोटे स्टार्टअप्स) के लिए आसान बनाता है।
 
-## 🎯 The Problem
+🛠 System Workflow (Diagram)
+Code snippet
+graph TD
+    A[User Input/Data] --> B{Stratix Core AI}
+    B --> C[Strategy Hub]
+    B --> D[Bias Audit]
+    B --> E[Auto-ML Generator]
+    C --> F[Market Insights]
+    D --> G[Fairness Report]
+    E --> H[Python/ML Code]
+    B --> I[Failover System]
+    I --> J[Groq/Gemini/OpenAI]
+💡 Key Modules
+🧠 Strategy Hub (Business Brain)
+बस अपना आईडिया डालिए और पाइए मार्केट एनालिसिस, रेवेन्यू मॉडल और SWOT।
 
-In India, **powerful market research and ML tools** are locked behind expensive enterprise software:
+Ideal for: Founders & MBA Students.
 
-- ❌ Market research costs ₹50,000 - 5,00,000
-- ❌ ML platforms charge ₹50,000+/year
-- ❌ Data cleaning takes hours of manual work
-- ❌ Complex datasets remain unusable
-- ❌ Small businesses can't afford consultants
-- ❌ Students can't access professional tools
+🛡️ Responsible AI (Bias Audit)
+क्या आपका डेटा पक्षपाती (Biased) है? हमारा टूल जेंडर और रीजनल बायस को ऑटोमैटिकली डिटेक्ट करता है।
 
-**Stratix AI changes this.**
+⚡ Automated Data Readiness
+कचरा डेटा (Messy CSV/PDF) अंदर, क्लीन और ML-रेडी डेटा बाहर!
 
----
+🤖 Auto-ML Code Generator
+बिना कोडिंग के मशीन लर्निंग। अपना टास्क लिखें और स्कैलर-रेडी Python कोड पाएँ।
 
-## 💡 The Solution
+🛡️ Enterprise-Grade Failover System
+हमने यह सुनिश्चित किया है कि टूल कभी 'Down' न हो। Stratix AI एक स्मार्ट Multi-Model Routing का उपयोग करता है:
 
-Stratix AI makes **enterprise-grade data intelligence accessible to everyone** - completely free and open source.
+Primary: Google Gemini (High Speed)
 
-### 🧠 **Strategy Hub** - Business Intelligence Without MBA
+Secondary: Groq Llama 3 (Ultra-Low Latency)
 
-Type your startup idea → Get instant market analysis, revenue models, competitor insights, and SWOT analysis.
+Tertiary: OpenAI (Robust Logic)
 
-**Perfect for:** Startup founders, entrepreneurs, business students
+⚠️ Current Limitations (Updates)
+चूंकि यह प्रोजेक्ट अभी भी विकसित हो रहा है, कुछ चीजें ध्यान में रखें:
 
-### 🛡️ **Responsible AI (Bias Audit)** 
+File Size: वर्तमान में 20MB से बड़ी फाइलों पर प्रोसेसिंग धीमी हो सकती है।
 
-Automatically scan datasets for gender, geographical, and demographic biases before using them in AI models.
+Token Limits: बहुत बड़े पैराग्राफ्स के लिए API थ्रॉटलिंग हो सकती है।
 
-**Perfect for:** Researchers, data scientists, organizations building fair AI
+Internet Dependency: यह एक क्लाउड-बेस्ड AI टूल है, ऑफलाइन काम नहीं करेगा।
 
-### ⚡ **Automated Data Readiness**
+⚖️ License (AGPL-3.0)
+यह प्रोजेक्ट GNU Affero General Public License v3.0 के तहत सुरक्षित है।
 
-Upload messy government data (PDFs, CSVs, Excel) → Get structured, ML-ready datasets in seconds.
+Commercial Use: आप इसका उपयोग कमर्शियल कामों के लिए कर सकते हैं।
 
-**Perfect for:** Data analysts, students, NGOs working with public data
+Condition: यदि आप इस कोड को मॉडिफाई करके क्लाउड पर होस्ट करते हैं, तो आपको अपना सोर्स कोड भी सार्वजनिक (Open Source) करना होगा। यह "Copyleft" नियम हमारे प्रोजेक्ट की अखंडता बनाए रखता है।
 
-### 🤖 **Auto-ML Code Generator**
+👨‍💻 Developed By
+Hemant (Class 8 Student & AI Enthusiast)
 
-Describe your ML task in plain English → Get production-ready Python code (scikit-learn, TensorFlow) with detailed explanations.
-
-**Perfect for:** Students learning ML, developers building prototypes, non-coders needing ML solutions
-
----
-
-## 🛡️ Enterprise-Grade Infrastructure
-
-### 🔄 Multi-AI Provider Failover System
-
-Stratix AI uses **three AI providers** with automatic failover to ensure 100% uptime:
+Mission: Making professional tools affordable for every Indian student.
