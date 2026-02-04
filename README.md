@@ -1,11 +1,12 @@
-🚀 Stratix AI | Democratizing Data Intelligence
+# 🚀 Stratix AI | Democratizing Data Intelligence
+
 <div align="center">
 
-🌟 Enterprise-Grade AI Tools for Everyone 🌟
+![Stratix AI Logo](logo.jpeg)
 
-Making professional data intelligence accessible to students, startups, and small businesses
-
-Try Demo • Documentation • Report Bug
+[![Frontend Demo](https://img.shields.io/badge/Demo-Live-success?style=for-the-badge&logo=vercel)](https://stratixai.netlify.app/)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+[![Made with Love](https://img.shields.io/badge/Made%20with-❤️-red?style=for-the-badge)](https://github.com/hemant12578)
 
 </div>
 
