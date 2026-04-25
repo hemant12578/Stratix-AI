@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import axios from '../config/api'
 import { Search, Filter, ArrowLeft, Database, Sparkles, TrendingUp } from 'lucide-react'
 import { AuroraBackground, ParticlesBackground } from '../components/AnimatedBackground'
 import { FadeInText, GradientText } from '../components/AnimatedText'
@@ -38,7 +38,8 @@ function DatasetSearch() {
         params: {
           query: query.trim(),
           limit: 50
-        }
+        },
+        timeout: 120000
       })
       
       

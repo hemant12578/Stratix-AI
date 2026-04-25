@@ -220,6 +220,10 @@ async def _search_public_sources(query: str, limit: int) -> List[Dict[str, Any]]
         seen.add(item.get("id"))
         unique.append(item)
 
+    # For broad/generic queries, don't return empty list; provide curated defaults.
+    if not unique:
+        unique = curated[:]
+
     return unique[:limit]
 
 async def search_datasets(query: str, limit: int = 20) -> List[Dict[str, Any]]:

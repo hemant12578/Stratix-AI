@@ -6,7 +6,7 @@ function TermsOfService() {
       <div className="container mx-auto px-6 py-16 flex-1 max-w-4xl">
         <h1 className="text-4xl font-bold mb-6">Terms of Service</h1>
         <p className="text-gray-300 mb-4">
-          Preview terms for development. Replace with reviewed legal terms before production.
+          These terms govern your use of Stratix AI services, website, and APIs.
         </p>
         <div className="space-y-4 text-gray-300">
           <p>• Use the platform responsibly and comply with applicable laws.</p>

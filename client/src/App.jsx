@@ -20,6 +20,12 @@ import Tutorials from './pages/Tutorials'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
 import { AdminRoute } from './components/AdminRoute'
+import {
+  ADMIN_DASHBOARD_PATH,
+  ADMIN_LOGIN_PATH,
+  DEFAULT_ADMIN_DASHBOARD_PATH,
+  DEFAULT_ADMIN_LOGIN_PATH,
+} from './config/adminPaths'
 
 // Redirect to dashboard if logged in
 const LandingRoute = () => {
@@ -77,15 +83,31 @@ function AppRoutes() {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/documentation" element={<Documentation />} />
-        <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path={ADMIN_LOGIN_PATH} element={<AdminLogin />} />
+        {ADMIN_LOGIN_PATH !== DEFAULT_ADMIN_LOGIN_PATH && (
+          <Route path={DEFAULT_ADMIN_LOGIN_PATH} element={<AdminLogin />} />
+        )}
         <Route 
-          path="/admin" 
+          path={ADMIN_DASHBOARD_PATH}
           element={
             <AdminRoute>
               <Admin />
             </AdminRoute>
           } 
         />
+        {ADMIN_DASHBOARD_PATH !== DEFAULT_ADMIN_DASHBOARD_PATH && (
+          <Route
+            path={DEFAULT_ADMIN_DASHBOARD_PATH}
+            element={
+              <AdminRoute>
+                <Admin />
+              </AdminRoute>
+            }
+          />
+        )}
+        {/* Disable obvious legacy admin URLs */}
+        <Route path="/admin-login" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
         <Route 
           path="/results" 
           element={
@@ -110,6 +132,7 @@ function AppRoutes() {
             </ProtectedRoute>
           } 
         />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   )

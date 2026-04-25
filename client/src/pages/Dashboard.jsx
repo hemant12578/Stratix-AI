@@ -9,7 +9,7 @@ import {
 import { AuroraBackground, ParticlesBackground } from '../components/AnimatedBackground'
 import { FadeInText, GradientText } from '../components/AnimatedText'
 import Footer from '../components/Footer'
-import axios from 'axios'
+import axios from '../config/api'
 
 function Dashboard() {
   const { currentUser, logout, userProfile } = useAuth()

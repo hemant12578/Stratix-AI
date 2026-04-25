@@ -48,18 +48,18 @@ STORAGE_DIR=./data/temp
    - Add all the variables above
 
 3. **Configure Railway Settings**:
-   - Builder: Dockerfile
-   - Dockerfile Path: Dockerfile
-   - Start Command: `cd server && uvicorn main:app --host 0.0.0.0 --port $PORT`
+   - Railway will use `railway.json` from the repo root
+   - Build command: `pip install -r server/requirements.txt`
+   - Start command: `cd server && uvicorn main:app --host 0.0.0.0 --port $PORT`
    - Healthcheck Path: `/health`
 
 4. **Deploy**:
    - Railway will auto-deploy when you push to main branch
    - Or trigger manual deploy from Railway dashboard
 
-## Frontend Deployment (Netlify)
+## Frontend Deployment (Vercel)
 
-Your frontend is already deployed at: https://stratixai.netlify.app/
+Your frontend should be deployed on Vercel.
 
 Update the frontend API URL to point to your Railway backend:
 - In client code, change API calls from `localhost:8000` to your Railway URL

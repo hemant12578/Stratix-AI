@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import axios from '../config/api'
 import { ArrowLeft, Check, AlertCircle, Download, Eye } from 'lucide-react'
 import { AuroraBackground, ParticlesBackground } from '../components/AnimatedBackground'
 import { FadeInText } from '../components/AnimatedText'
@@ -21,6 +21,31 @@ function Results() {
       navigate('/')
     }
   }, [navigate])
+
+  useEffect(() => {
+    const refreshEmptyResults = async () => {
+      if (!results) return
+      const matches = results.matches || []
+      if (matches.length > 0) return
+
+      const savedQuery = sessionStorage.getItem('userQuery')?.trim()
+      if (!savedQuery) return
+
+      try {
+        const response = await axios.get('/api/search', {
+          params: { query: savedQuery, limit: 20 },
+          timeout: 120000
+        })
+        const fresh = response.data || {}
+        sessionStorage.setItem('searchResults', JSON.stringify(fresh))
+        setResults(fresh)
+      } catch (error) {
+        console.error('Failed to refresh empty cached results:', error)
+      }
+    }
+
+    refreshEmptyResults()
+  }, [results])
 
   const toggleDataset = (datasetId) => {
     setSelectedDatasets(prev =>
@@ -194,7 +219,16 @@ function Results() {
                   >
                     {selectedDatasets.includes(match.dataset_id || match.id) ? 'Selected' : 'Select'}
                   </button>
-                  <button className="flex-1 sm:flex-none px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => {
+                      const datasetUrl = match.url || match.dataset_url || match.source_url
+                      if (datasetUrl) {
+                        window.open(datasetUrl, '_blank', 'noopener,noreferrer')
+                      }
+                    }}
+                    disabled={!(match.url || match.dataset_url || match.source_url)}
+                    className="flex-1 sm:flex-none px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                  >
                     <Eye className="w-4 h-4" />
                     Preview
                   </button>

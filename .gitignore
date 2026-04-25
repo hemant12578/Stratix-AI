@@ -41,6 +41,8 @@ Thumbs.db
 data/
 *.csv
 *.json
+!railway.json
+!client/vercel.json
 *.zip
 *.parquet
 *.hdf5
@@ -56,3 +58,4 @@ tmp/
 
 server/venv312/
 
+.vercel

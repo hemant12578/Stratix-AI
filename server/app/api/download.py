@@ -6,6 +6,37 @@ from app.core.config import settings
 
 router = APIRouter()
 
+def _build_zip_archive(base_path: str, zip_path: str) -> None:
+    """Build a fresh ZIP archive from available outputs."""
+    temp_zip_path = f"{zip_path}.tmp"
+    with zipfile.ZipFile(temp_zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for ext in ["csv", "json"]:
+            for split in ["train", "test", "val"]:
+                file_path = f"{base_path}_{split}.{ext}"
+                if os.path.exists(file_path):
+                    zipf.write(file_path, f"{split}.{ext}")
+
+        metadata_path = f"{base_path}_metadata.json"
+        code_path = f"{base_path}_training_code.py"
+        if os.path.exists(metadata_path):
+            zipf.write(metadata_path, "metadata.json")
+        if os.path.exists(code_path):
+            zipf.write(code_path, "training_code.py")
+
+    os.replace(temp_zip_path, zip_path)
+
+def _zip_is_valid(zip_path: str) -> bool:
+    """Return True if zip exists and has at least one file."""
+    if not os.path.exists(zip_path):
+        return False
+    if os.path.getsize(zip_path) == 0:
+        return False
+    try:
+        with zipfile.ZipFile(zip_path, "r") as zipf:
+            return len(zipf.namelist()) > 0 and zipf.testzip() is None
+    except Exception:
+        return False
+
 @router.get("/download/{job_id}")
 async def download_file(job_id: str, file_type: str = "zip", format: str = ""):
     """Download processed files"""
@@ -18,20 +49,11 @@ async def download_file(job_id: str, file_type: str = "zip", format: str = ""):
     if file_type == "zip":
         file_path = f"{base_path}.zip"
         filename = f"stratix_{job_id}.zip"
-        # Create ZIP on-demand if it doesn't exist
-        if not os.path.exists(file_path):
-            # Rebuild ZIP from available files
-            with zipfile.ZipFile(file_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for ext in ["csv", "json"]:
-                    for split in ["train", "test", "val"]:
-                        file = f"{base_path}_{split}.{ext}"
-                        if os.path.exists(file):
-                            zipf.write(file, f"{split}.{ext}")
-                # Add metadata and code
-                if os.path.exists(f"{base_path}_metadata.json"):
-                    zipf.write(f"{base_path}_metadata.json", "metadata.json")
-                if os.path.exists(f"{base_path}_training_code.py"):
-                    zipf.write(f"{base_path}_training_code.py", "training_code.py")
+        # Always rebuild if missing/corrupt/empty so users don't get blank zips.
+        if not _zip_is_valid(file_path):
+            _build_zip_archive(base_path, file_path)
+            if not _zip_is_valid(file_path):
+                raise HTTPException(status_code=500, detail="Failed to create a valid ZIP archive")
     elif file_type == "train":
         csv_path = f"{base_path}_train.csv"
         json_path = f"{base_path}_train.json"

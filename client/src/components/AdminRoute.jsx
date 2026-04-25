@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { ADMIN_LOGIN_PATH } from '../config/adminPaths'
 
 const isAdminEmail = (email = '') => {
   const allowList = (import.meta.env.VITE_ADMIN_EMAILS || '')
@@ -17,6 +18,8 @@ const isAdminEmail = (email = '') => {
 
 export function AdminRoute({ children }) {
   const { currentUser, loading } = useAuth()
+  const adminToken = sessionStorage.getItem('adminToken')
+  const adminRole = sessionStorage.getItem('adminRole')
 
   if (loading) {
     return (
@@ -29,8 +32,12 @@ export function AdminRoute({ children }) {
     )
   }
 
+  if (adminToken && adminRole === 'admin') {
+    return children
+  }
+
   if (!currentUser) {
-    return <Navigate to="/admin-login" replace />
+    return <Navigate to={ADMIN_LOGIN_PATH} replace />
   }
 
   if (!isAdminEmail(currentUser.email)) {

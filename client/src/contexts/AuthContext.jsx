@@ -12,6 +12,7 @@ import {
 } from 'firebase/auth'
 import { auth, db } from '../config/firebase'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
+import axios from '../config/api'
 
 const AuthContext = createContext({})
 
@@ -230,6 +231,26 @@ export const AuthProvider = ({ children }) => {
       setUserProfile(null)
     }
   }, [currentUser])
+
+  // Keep backend user list synced for admin dashboard analytics/control.
+  useEffect(() => {
+    const syncUserToBackend = async () => {
+      if (!currentUser?.email) return
+      try {
+        await axios.post('/api/user/sync', {
+          uid: currentUser.uid,
+          email: currentUser.email,
+          name: currentUser.displayName || '',
+          subscriptionTier: userProfile?.subscriptionTier || 'free',
+          requestsUsed: userProfile?.requestsUsed || 0,
+          active: true,
+        })
+      } catch (error) {
+        console.warn('User sync to backend failed:', error?.message || error)
+      }
+    }
+    syncUserToBackend()
+  }, [currentUser, userProfile])
 
   // Monitor auth state
   useEffect(() => {

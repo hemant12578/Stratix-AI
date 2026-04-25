@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import axios from 'axios'
-import { Lightbulb, Target, IndianRupee, Shield, AlertTriangle, TrendingUp, BarChart3, Sparkles } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import axios from '../config/api'
+import { ArrowLeft, Lightbulb, Target, IndianRupee, Shield, AlertTriangle, TrendingUp, BarChart3, Sparkles } from 'lucide-react'
 import { AuroraBackground, ParticlesBackground } from '../components/AnimatedBackground'
 import { FadeInText, GradientText } from '../components/AnimatedText'
 import Footer from '../components/Footer'
 
 function StrategyHub() {
+  const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -61,7 +63,17 @@ function StrategyHub() {
       <AuroraBackground />
       <ParticlesBackground count={40} />
 
-      <div className="relative z-10 container mx-auto px-4 py-10">
+      <div className="relative z-10 container mx-auto px-4 py-6 sm:py-10">
+        <div className="mb-4 sm:mb-6">
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard')}
+            className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </button>
+        </div>
         {/* Header */}
         <header className="mb-10 text-center">
           <FadeInText delay={0}>

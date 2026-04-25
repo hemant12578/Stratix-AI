@@ -1,6 +1,6 @@
 """
 Simplified test server for local development
-Full backend runs on Render (Python 3.13.4)
+Full backend runs on Railway.
 """
 
 from fastapi import FastAPI
@@ -13,12 +13,13 @@ app = FastAPI(title="Stratix AI API", version="1.0.0")
 allowed_origins = [
     "http://localhost:5173",
     "http://localhost:3000",
-    "https://stratix-ai.netlify.app",
 ]
+allow_origin_regex = r"https://.*\.vercel\.app"
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=allow_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -26,7 +27,7 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {"message": "Stratix AI API (Local Test)", "status": "running", "note": "This is a test backend. Full backend with Gemini API runs on Render."}
+    return {"message": "Stratix AI API (Local Test)", "status": "running", "note": "This is a test backend. Full backend with Gemini API runs on Railway."}
 
 @app.get("/health")
 async def health():
