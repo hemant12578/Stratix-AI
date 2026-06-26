@@ -27,7 +27,7 @@ class ProcessRequest(BaseModel):
 # Store job status
 job_status = {}
 
-async def process_data_task(job_id: str, dataset_ids: List[str], requirements: Dict[str, Any]):
+def process_data_task(job_id: str, dataset_ids: List[str], requirements: Dict[str, Any]):
     """Background task to process datasets"""
     try:
         job_status[job_id] = {"status": "processing", "progress": 0, "message": "Starting..."}
@@ -38,7 +38,7 @@ async def process_data_task(job_id: str, dataset_ids: List[str], requirements: D
         
         dfs = []
         for ds_id in dataset_ids:
-            df = await load_dataset_by_id(ds_id)
+            df = load_dataset_by_id(ds_id)
             if df is not None and not df.empty:
                 dfs.append(df)
         
@@ -109,8 +109,6 @@ async def process_data_task(job_id: str, dataset_ids: List[str], requirements: D
         ml_framework = requirements.get("ml_framework", "sklearn")
         task_type = requirements.get("task_type", "classification")
         training_code = generate_training_code(metadata, ml_framework, task_type)
-        if isinstance(training_code, str):
-            training_code = training_code.replace("\ufeff", "")
         
         # Step 8: Save files
         job_status[job_id]["message"] = "Saving files..."
@@ -119,69 +117,46 @@ async def process_data_task(job_id: str, dataset_ids: List[str], requirements: D
         os.makedirs(settings.STORAGE_DIR, exist_ok=True)
         base_path = os.path.join(settings.STORAGE_DIR, job_id)
         
-        # Save output files
+        # Save CSV files
         output_format = requirements.get("output_format", "csv")
-        if output_format in ["csv", "both"]:
+        if output_format == "csv":
             train_df.to_csv(f"{base_path}_train.csv", index=False)
             test_df.to_csv(f"{base_path}_test.csv", index=False)
             if not val_df.empty:
                 val_df.to_csv(f"{base_path}_val.csv", index=False)
-        if output_format in ["json", "both"]:
+        else:  # JSON
             train_df.to_json(f"{base_path}_train.json", orient="records", indent=2)
             test_df.to_json(f"{base_path}_test.json", orient="records", indent=2)
             if not val_df.empty:
                 val_df.to_json(f"{base_path}_val.json", orient="records", indent=2)
         
         # Save metadata
-        with open(f"{base_path}_metadata.json", "w", encoding="utf-8") as f:
-            json.dump(metadata, f, indent=2, ensure_ascii=False)
+        with open(f"{base_path}_metadata.json", "w") as f:
+            json.dump(metadata, f, indent=2)
         
         # Save training code
-        with open(f"{base_path}_training_code.py", "w", encoding="utf-8") as f:
+        with open(f"{base_path}_training_code.py", "w") as f:
             f.write(training_code)
         
-        # Create ZIP file with proper structure
+        # Create ZIP file
         zip_path = f"{base_path}.zip"
-        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            # Add data files with proper names
-            if output_format == "both":
-                if os.path.exists(f"{base_path}_train.csv"):
-                    zipf.write(f"{base_path}_train.csv", "train.csv")
-                if os.path.exists(f"{base_path}_test.csv"):
-                    zipf.write(f"{base_path}_test.csv", "test.csv")
-                if not val_df.empty and os.path.exists(f"{base_path}_val.csv"):
-                    zipf.write(f"{base_path}_val.csv", "val.csv")
-                if os.path.exists(f"{base_path}_train.json"):
-                    zipf.write(f"{base_path}_train.json", "train.json")
-                if os.path.exists(f"{base_path}_test.json"):
-                    zipf.write(f"{base_path}_test.json", "test.json")
-                if not val_df.empty and os.path.exists(f"{base_path}_val.json"):
-                    zipf.write(f"{base_path}_val.json", "val.json")
-            else:
-                # Single format (csv or json)
-                if os.path.exists(f"{base_path}_train.{output_format}"):
-                    zipf.write(f"{base_path}_train.{output_format}", f"train.{output_format}")
-                if os.path.exists(f"{base_path}_test.{output_format}"):
-                    zipf.write(f"{base_path}_test.{output_format}", f"test.{output_format}")
-                if not val_df.empty and os.path.exists(f"{base_path}_val.{output_format}"):
-                    zipf.write(f"{base_path}_val.{output_format}", f"val.{output_format}")
-            
-            # Add metadata and code files
-            if os.path.exists(f"{base_path}_metadata.json"):
-                zipf.write(f"{base_path}_metadata.json", "metadata.json")
-            if os.path.exists(f"{base_path}_training_code.py"):
-                zipf.write(f"{base_path}_training_code.py", "training_code.py")
+        with zipfile.ZipFile(zip_path, 'w') as zipf:
+            zipf.write(f"{base_path}_train.{output_format}", f"train.{output_format}")
+            zipf.write(f"{base_path}_test.{output_format}", f"test.{output_format}")
+            if not val_df.empty:
+                zipf.write(f"{base_path}_val.{output_format}", f"val.{output_format}")
+            zipf.write(f"{base_path}_metadata.json", "metadata.json")
+            zipf.write(f"{base_path}_training_code.py", "training_code.py")
         
         # Update job status
         job_status[job_id] = {
             "status": "completed",
             "progress": 100,
             "message": "Processing complete!",
-            "output_format": output_format,
             "files": {
                 "zip": zip_path,
-                "train": f"{base_path}_train.csv" if output_format == "both" else f"{base_path}_train.{output_format}",
-                "test": f"{base_path}_test.csv" if output_format == "both" else f"{base_path}_test.{output_format}",
+                "train": f"{base_path}_train.{output_format}",
+                "test": f"{base_path}_test.{output_format}",
                 "metadata": f"{base_path}_metadata.json",
                 "code": f"{base_path}_training_code.py"
             },

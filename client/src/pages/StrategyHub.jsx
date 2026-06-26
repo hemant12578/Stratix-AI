@@ -1,13 +1,11 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import axios from '../config/api'
-import { ArrowLeft, Lightbulb, Target, IndianRupee, Shield, AlertTriangle, TrendingUp, BarChart3, Sparkles } from 'lucide-react'
+import axios from 'axios'
+import { Lightbulb, Target, IndianRupee, Shield, AlertTriangle, TrendingUp, BarChart3, Sparkles } from 'lucide-react'
 import { AuroraBackground, ParticlesBackground } from '../components/AnimatedBackground'
 import { FadeInText, GradientText } from '../components/AnimatedText'
 import Footer from '../components/Footer'
 
 function StrategyHub() {
-  const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -26,8 +24,7 @@ function StrategyHub() {
       setResult(response.data.data)
     } catch (err) {
       console.error('Strategy analysis failed:', err)
-      const serverMsg = err?.response?.data?.detail
-      setError(serverMsg || 'Analysis failed. Please try again in a moment.')
+      setError('Analysis failed. Please try again in a moment.')
     } finally {
       setLoading(false)
     }
@@ -63,17 +60,7 @@ function StrategyHub() {
       <AuroraBackground />
       <ParticlesBackground count={40} />
 
-      <div className="relative z-10 container mx-auto px-4 py-6 sm:py-10">
-        <div className="mb-4 sm:mb-6">
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard')}
-            className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </button>
-        </div>
+      <div className="relative z-10 container mx-auto px-4 py-10">
         {/* Header */}
         <header className="mb-10 text-center">
           <FadeInText delay={0}>
@@ -120,7 +107,7 @@ function StrategyHub() {
               <button
                 type="submit"
                 disabled={loading || !query.trim()}
-                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold flex items-center justify-center gap-2 shadow-lg shadow-primary-500/40"
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold flex items-center gap-2 shadow-lg shadow-primary-500/40"
               >
                 <Lightbulb className="w-4 h-4" />
                 {loading ? 'Analyzing...' : 'Analyze Strategy'}

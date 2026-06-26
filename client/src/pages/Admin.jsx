@@ -3,27 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
   Users, Database, TrendingUp, DollarSign, Settings,
-  FileText, Search, Zap, Trash2, Save, RefreshCw
+  BarChart3, FileText, AlertCircle, CheckCircle, XCircle,
+  Download, Search, Calendar, Zap
 } from 'lucide-react'
 import { AuroraBackground, ParticlesBackground } from '../components/AnimatedBackground'
 import { FadeInText, GradientText } from '../components/AnimatedText'
 import Footer from '../components/Footer'
-import axios from '../config/api'
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from 'recharts'
 
 function Admin() {
   const { currentUser, logout } = useAuth()
@@ -39,173 +24,18 @@ function Admin() {
   const [recentUsers, setRecentUsers] = useState([])
   const [recentRequests, setRecentRequests] = useState([])
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const [lastSync, setLastSync] = useState('')
   const [employees, setEmployees] = useState([])
   const [employeeForm, setEmployeeForm] = useState({ name: '', email: '', role: 'analyst' })
-  const [accounts, setAccounts] = useState([])
-  const [accountForm, setAccountForm] = useState({ name: '', email: '', password: '', role: 'employee' })
-  const [users, setUsers] = useState([])
-  const [newUser, setNewUser] = useState({ name: '', email: '', subscriptionTier: 'free' })
-  const [editingUserId, setEditingUserId] = useState('')
-  const [editingUserForm, setEditingUserForm] = useState({ name: '', email: '', subscriptionTier: 'free', active: true })
-  const [analytics, setAnalytics] = useState({
-    dailyNewUsers: [],
-    dailyRequests: [],
-    planDistribution: [],
-    roles: [],
-  })
   const [featureFlags, setFeatureFlags] = useState({
     datasetSearch: true,
     processing: true,
     downloads: true,
-    strategyHub: true,
   })
 
-  const adminHeader = {
-    headers: {
-      'x-admin-email': sessionStorage.getItem('adminEmail') || currentUser?.email || '',
-      ...(sessionStorage.getItem('adminToken')
-        ? { 'x-admin-token': sessionStorage.getItem('adminToken') }
-        : {}),
-    },
-  }
-
-  const loadAdminData = async (isInitial = false) => {
-    if (isInitial) setLoading(true)
-    setError('')
-    try {
-      const [overviewRes, usersRes, accountsRes, analyticsRes] = await Promise.all([
-        axios.get('/api/admin/overview', adminHeader),
-        axios.get('/api/admin/users', adminHeader),
-        axios.get('/api/admin/accounts', adminHeader),
-        axios.get('/api/admin/analytics', adminHeader),
-      ])
-      const data = overviewRes.data || {}
-      setStats(data.stats || {})
-      setRecentUsers(data.recentUsers || [])
-      setRecentRequests(data.recentRequests || [])
-      setFeatureFlags(data.features || {})
-      setEmployees(data.employees || [])
-      setUsers(usersRes.data?.users || [])
-      setAccounts(accountsRes.data?.accounts || [])
-      setAnalytics(analyticsRes.data || { dailyNewUsers: [], dailyRequests: [], planDistribution: [], roles: [] })
-      setLastSync(new Date().toLocaleTimeString())
-    } catch (err) {
-      setError(err?.response?.data?.detail || err?.message || 'Failed to load admin data')
-    } finally {
-      if (isInitial) setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    if (!(currentUser?.email || sessionStorage.getItem('adminToken'))) return
-    loadAdminData(true)
-    const id = setInterval(() => {
-      loadAdminData(false)
-    }, 10000)
-    return () => clearInterval(id)
-  }, [currentUser])
-
-  const handleSaveFeatureFlags = async () => {
-    setSaving(true)
-    setError('')
-    try {
-      await axios.put('/api/admin/features', { features: featureFlags }, adminHeader)
-    } catch (err) {
-      setError(err?.response?.data?.detail || 'Failed to save feature toggles')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleAddEmployee = async () => {
-    if (!employeeForm.email || !employeeForm.name) return
-    setSaving(true)
-    setError('')
-    try {
-      const res = await axios.post('/api/admin/employees', employeeForm, adminHeader)
-      setEmployees((list) => [res.data.employee, ...list])
-      setEmployeeForm({ name: '', email: '', role: 'analyst' })
-    } catch (err) {
-      setError(err?.response?.data?.detail || 'Failed to add employee')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleAddAccount = async () => {
-    if (!accountForm.name || !accountForm.email || !accountForm.password) return
-    setSaving(true)
-    setError('')
-    try {
-      const res = await axios.post('/api/admin/accounts', accountForm, adminHeader)
-      setAccounts((list) => [res.data.account, ...list])
-      setAccountForm({ name: '', email: '', password: '', role: 'employee' })
-    } catch (err) {
-      setError(err?.response?.data?.detail || 'Failed to create account')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleAddUser = async () => {
-    if (!newUser.email) return
-    setSaving(true)
-    setError('')
-    try {
-      const res = await axios.post('/api/admin/users', newUser, adminHeader)
-      setUsers((list) => [res.data.user, ...list])
-      setNewUser({ name: '', email: '', subscriptionTier: 'free' })
-    } catch (err) {
-      setError(err?.response?.data?.detail || 'Failed to add user')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const startEditUser = (user) => {
-    setEditingUserId(user.id)
-    setEditingUserForm({
-      name: user.name || '',
-      email: user.email || '',
-      subscriptionTier: user.subscriptionTier || 'free',
-      active: !!user.active,
-    })
-  }
-
-  const cancelEditUser = () => {
-    setEditingUserId('')
-    setEditingUserForm({ name: '', email: '', subscriptionTier: 'free', active: true })
-  }
-
-  const handleUpdateUser = async (userId) => {
-    setSaving(true)
-    setError('')
-    try {
-      const res = await axios.put(`/api/admin/users/${userId}`, editingUserForm, adminHeader)
-      setUsers((list) => list.map((u) => (u.id === userId ? res.data.user : u)))
-      cancelEditUser()
-    } catch (err) {
-      setError(err?.response?.data?.detail || 'Failed to update user')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleDeleteUser = async (userId) => {
-    setSaving(true)
-    setError('')
-    try {
-      await axios.delete(`/api/admin/users/${userId}`, adminHeader)
-      setUsers((list) => list.filter((u) => u.id !== userId))
-    } catch (err) {
-      setError(err?.response?.data?.detail || 'Failed to delete user')
-    } finally {
-      setSaving(false)
-    }
-  }
+    // AdminRoute already protects; just end loading
+    setLoading(false)
+  }, [])
 
   if (loading) {
     return (
@@ -232,14 +62,6 @@ function Admin() {
               Admin Dashboard
             </h1>
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => loadAdminData(false)}
-                className="px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors text-xs flex items-center gap-2"
-              >
-                <RefreshCw className="w-4 h-4" />
-                Refresh
-              </button>
-              <span className="text-xs text-gray-500">Live: {lastSync || 'syncing...'}</span>
               <span className="text-sm text-gray-400">{currentUser?.email}</span>
               <button
                 onClick={() => navigate('/dashboard')}
@@ -248,13 +70,7 @@ function Admin() {
                 User Dashboard
               </button>
               <button
-                onClick={async () => {
-                  sessionStorage.removeItem('adminToken')
-                  sessionStorage.removeItem('adminEmail')
-                  sessionStorage.removeItem('adminRole')
-                  await logout()
-                  navigate('/')
-                }}
+                onClick={logout}
                 className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition-colors text-sm"
               >
                 Logout
@@ -313,73 +129,6 @@ function Admin() {
 
           {/* Charts and Tables */}
           <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
-              <h3 className="text-lg font-semibold mb-4">Daily New Users</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={analytics.dailyNewUsers || []}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                    <XAxis dataKey="date" stroke="#94a3b8" />
-                    <YAxis stroke="#94a3b8" allowDecimals={false} />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="count" stroke="#06b6d4" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
-              <h3 className="text-lg font-semibold mb-4">Daily Requests</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={analytics.dailyRequests || []}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                    <XAxis dataKey="date" stroke="#94a3b8" />
-                    <YAxis stroke="#94a3b8" allowDecimals={false} />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
-              <h3 className="text-lg font-semibold mb-4">Plan Distribution</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={analytics.planDistribution || []} dataKey="value" nameKey="name" outerRadius={90}>
-                      {(analytics.planDistribution || []).map((_, idx) => (
-                        <Cell key={`plan-${idx}`} fill={['#22c55e', '#3b82f6', '#a855f7'][idx % 3]} />
-                      ))}
-                    </Pie>
-                    <Legend />
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
-              <h3 className="text-lg font-semibold mb-4">Admin vs Employee Accounts</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={analytics.roles || []} dataKey="value" nameKey="name" outerRadius={90}>
-                      {(analytics.roles || []).map((_, idx) => (
-                        <Cell key={`role-${idx}`} fill={['#f59e0b', '#06b6d4'][idx % 2]} />
-                      ))}
-                    </Pie>
-                    <Legend />
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
             {/* Recent Users */}
             <FadeInText delay={600}>
               <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
@@ -387,17 +136,9 @@ function Admin() {
                   <Users className="w-5 h-5 text-primary-400" />
                   Recent Users
                 </h3>
-                <div className="space-y-2 text-sm text-gray-300 max-h-64 overflow-auto">
-                  {recentUsers.length === 0 && <p className="text-gray-400">No users yet.</p>}
-                  {recentUsers.map((u) => (
-                    <div key={u.id} className="flex items-center justify-between bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2">
-                      <div>
-                        <p className="font-medium">{u.name || u.email}</p>
-                        <p className="text-xs text-gray-400">{u.email}</p>
-                      </div>
-                      <span className="text-xs capitalize text-primary-300">{u.subscriptionTier || 'free'}</span>
-                    </div>
-                  ))}
+                <div className="space-y-3 text-sm text-gray-400">
+                  <p>No data loaded. Connect this panel to your admin APIs.</p>
+                  <p className="text-xs text-gray-500">Hook up: GET /admin/users, GET /admin/requests</p>
                 </div>
               </div>
             </FadeInText>
@@ -409,17 +150,9 @@ function Admin() {
                   <FileText className="w-5 h-5 text-purple-400" />
                   Recent Requests
                 </h3>
-                <div className="space-y-2 text-sm text-gray-300 max-h-64 overflow-auto">
-                  {recentRequests.length === 0 && <p className="text-gray-400">No requests yet.</p>}
-                  {recentRequests.map((r) => (
-                    <div key={r.jobId} className="flex items-center justify-between bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2">
-                      <div>
-                        <p className="font-medium">Job {r.jobId.slice(0, 8)}</p>
-                        <p className="text-xs text-gray-400">{r.message}</p>
-                      </div>
-                      <span className="text-xs capitalize text-green-300">{r.status}</span>
-                    </div>
-                  ))}
+                <div className="space-y-3 text-sm text-gray-400">
+                  <p>No data loaded. Connect to your request logs endpoint.</p>
+                  <p className="text-xs text-gray-500">Hook up: GET /admin/requests</p>
                 </div>
               </div>
             </FadeInText>
@@ -433,165 +166,6 @@ function Admin() {
                 Management Actions
               </h3>
               <div className="grid md:grid-cols-2 gap-6">
-                <div className="p-4 bg-gray-700/20 rounded-lg border border-gray-700 space-y-4">
-                  <h4 className="font-semibold flex items-center gap-2">
-                    <Users className="w-5 h-5 text-emerald-400" />
-                    User Control
-                  </h4>
-                  <div className="grid sm:grid-cols-3 gap-2">
-                    <input
-                      type="text"
-                      placeholder="Name"
-                      value={newUser.name}
-                      onChange={(e) => setNewUser((v) => ({ ...v, name: e.target.value }))}
-                      className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 focus:border-primary-400 focus:outline-none text-sm"
-                    />
-                    <input
-                      type="email"
-                      placeholder="Email"
-                      value={newUser.email}
-                      onChange={(e) => setNewUser((v) => ({ ...v, email: e.target.value }))}
-                      className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 focus:border-primary-400 focus:outline-none text-sm"
-                    />
-                    <select
-                      value={newUser.subscriptionTier}
-                      onChange={(e) => setNewUser((v) => ({ ...v, subscriptionTier: e.target.value }))}
-                      className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 focus:border-primary-400 focus:outline-none text-sm"
-                    >
-                      <option value="free">Free</option>
-                      <option value="pro">Pro</option>
-                      <option value="enterprise">Enterprise</option>
-                    </select>
-                  </div>
-                  <button
-                    onClick={handleAddUser}
-                    disabled={saving}
-                    className="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 transition-colors text-sm font-semibold disabled:opacity-60"
-                  >
-                    Add User
-                  </button>
-                  <div className="max-h-44 overflow-auto space-y-2">
-                    {users.map((u) => (
-                      <div key={u.id} className="flex items-center justify-between bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-sm">
-                        {editingUserId === u.id ? (
-                          <div className="w-full space-y-2">
-                            <input
-                              type="text"
-                              value={editingUserForm.name}
-                              onChange={(e) => setEditingUserForm((v) => ({ ...v, name: e.target.value }))}
-                              className="w-full px-2 py-1 rounded bg-gray-800 border border-gray-700"
-                            />
-                            <input
-                              type="email"
-                              value={editingUserForm.email}
-                              onChange={(e) => setEditingUserForm((v) => ({ ...v, email: e.target.value }))}
-                              className="w-full px-2 py-1 rounded bg-gray-800 border border-gray-700"
-                            />
-                            <div className="flex gap-2">
-                              <select
-                                value={editingUserForm.subscriptionTier}
-                                onChange={(e) => setEditingUserForm((v) => ({ ...v, subscriptionTier: e.target.value }))}
-                                className="px-2 py-1 rounded bg-gray-800 border border-gray-700"
-                              >
-                                <option value="free">free</option>
-                                <option value="pro">pro</option>
-                                <option value="enterprise">enterprise</option>
-                              </select>
-                              <label className="flex items-center gap-1 text-xs text-gray-300">
-                                <input
-                                  type="checkbox"
-                                  checked={editingUserForm.active}
-                                  onChange={(e) => setEditingUserForm((v) => ({ ...v, active: e.target.checked }))}
-                                />
-                                active
-                              </label>
-                            </div>
-                            <div className="flex gap-2">
-                              <button onClick={() => handleUpdateUser(u.id)} className="px-2 py-1 bg-emerald-600 rounded text-xs flex items-center gap-1">
-                                <Save className="w-3 h-3" />
-                                Save
-                              </button>
-                              <button onClick={cancelEditUser} className="px-2 py-1 bg-gray-700 rounded text-xs">
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <div>
-                              <p className="font-medium">{u.name || u.email}</p>
-                              <p className="text-xs text-gray-400">{u.subscriptionTier || 'free'} • {u.email}</p>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <button onClick={() => startEditUser(u)} className="text-xs text-cyan-300 hover:text-cyan-200">Edit</button>
-                              <button onClick={() => handleDeleteUser(u.id)} className="text-red-400 hover:text-red-300">
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="p-4 bg-gray-700/20 rounded-lg border border-gray-700">
-                  <h4 className="font-semibold mb-3 flex items-center gap-2">
-                    <Users className="w-5 h-5 text-cyan-300" />
-                    Admin / Employee Accounts (Email + Password)
-                  </h4>
-                  <div className="space-y-3 mb-4">
-                    <input
-                      type="text"
-                      placeholder="Full name"
-                      value={accountForm.name}
-                      onChange={(e) => setAccountForm((v) => ({ ...v, name: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 focus:border-primary-400 focus:outline-none text-sm"
-                    />
-                    <input
-                      type="email"
-                      placeholder="Email"
-                      value={accountForm.email}
-                      onChange={(e) => setAccountForm((v) => ({ ...v, email: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 focus:border-primary-400 focus:outline-none text-sm"
-                    />
-                    <input
-                      type="password"
-                      placeholder="Password"
-                      value={accountForm.password}
-                      onChange={(e) => setAccountForm((v) => ({ ...v, password: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 focus:border-primary-400 focus:outline-none text-sm"
-                    />
-                    <select
-                      value={accountForm.role}
-                      onChange={(e) => setAccountForm((v) => ({ ...v, role: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 focus:border-primary-400 focus:outline-none text-sm"
-                    >
-                      <option value="employee">Employee</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                    <button
-                      onClick={handleAddAccount}
-                      disabled={saving}
-                      className="w-full py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 transition-colors text-sm font-semibold disabled:opacity-60"
-                    >
-                      Create Account
-                    </button>
-                  </div>
-                  <div className="space-y-2 max-h-40 overflow-auto">
-                    {accounts.length === 0 && <p className="text-gray-400 text-sm">No admin/employee accounts yet.</p>}
-                    {accounts.map((a) => (
-                      <div key={a.id} className="flex items-center justify-between text-sm bg-gray-900 border border-gray-800 rounded-lg px-3 py-2">
-                        <div>
-                          <p className="font-medium">{a.name}</p>
-                          <p className="text-gray-400">{a.email}</p>
-                        </div>
-                        <span className="text-cyan-300 text-xs uppercase">{a.role}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
                 <div className="p-4 bg-gray-700/20 rounded-lg border border-gray-700">
                   <h4 className="font-semibold mb-3 flex items-center gap-2">
                     <Users className="w-5 h-5 text-primary-400" />
@@ -623,10 +197,15 @@ function Admin() {
                     </select>
                     <button
                       className="w-full py-2 rounded-lg bg-primary-500 hover:bg-primary-400 transition-colors text-sm font-semibold"
-                      onClick={handleAddEmployee}
+                      onClick={() => {
+                        if (!employeeForm.email || !employeeForm.name) return
+                        setEmployees(list => [...list, { ...employeeForm, id: Date.now().toString() }])
+                        setEmployeeForm({ name: '', email: '', role: 'analyst' })
+                      }}
                     >
-                      Save Employee
+                      Save Employee (wire to API)
                     </button>
+                    <p className="text-xs text-gray-500">Hook up: POST /admin/employees</p>
                   </div>
                   <div className="mt-4 space-y-2">
                     {employees.length === 0 && <p className="text-gray-400 text-sm">No employees added yet.</p>}
@@ -659,21 +238,15 @@ function Admin() {
                         />
                       </label>
                     ))}
-                    <button
-                      onClick={handleSaveFeatureFlags}
-                      disabled={saving}
-                      className="w-full py-2 rounded-lg bg-primary-500 hover:bg-primary-400 transition-colors text-sm font-semibold disabled:opacity-60"
-                    >
-                      Apply Feature Controls
+                    <button className="w-full py-2 rounded-lg bg-primary-500 hover:bg-primary-400 transition-colors text-sm font-semibold">
+                      Save Toggles (wire to API)
                     </button>
+                    <p className="text-xs text-gray-500">Hook up: PUT /admin/features</p>
                   </div>
                 </div>
               </div>
             </div>
           </FadeInText>
-          {error && (
-            <p className="mt-4 text-sm text-red-400">{error}</p>
-          )}
         </main>
       </div>
 

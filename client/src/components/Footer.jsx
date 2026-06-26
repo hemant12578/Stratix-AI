@@ -16,16 +16,16 @@ function Footer() {
               explore market strategy, and export dev-ready training code in seconds.
             </p>
             <div className="flex gap-4">
-              <a href="https://github.com" target="_blank" rel="noreferrer" aria-label="GitHub" className="text-gray-400 hover:text-primary-400 transition-colors">
+              <a href="#" className="text-gray-400 hover:text-primary-400 transition-colors">
                 <Github className="w-5 h-5" />
               </a>
-              <a href="https://x.com" target="_blank" rel="noreferrer" aria-label="X (Twitter)" className="text-gray-400 hover:text-primary-400 transition-colors">
+              <a href="#" className="text-gray-400 hover:text-primary-400 transition-colors">
                 <Twitter className="w-5 h-5" />
               </a>
-              <a href="https://www.linkedin.com" target="_blank" rel="noreferrer" aria-label="LinkedIn" className="text-gray-400 hover:text-primary-400 transition-colors">
+              <a href="#" className="text-gray-400 hover:text-primary-400 transition-colors">
                 <Linkedin className="w-5 h-5" />
               </a>
-              <a href="mailto:support@stratix.ai" aria-label="Email support" className="text-gray-400 hover:text-primary-400 transition-colors">
+              <a href="#" className="text-gray-400 hover:text-primary-400 transition-colors">
                 <Mail className="w-5 h-5" />
               </a>
             </div>

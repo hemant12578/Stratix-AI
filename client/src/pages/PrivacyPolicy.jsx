@@ -6,7 +6,7 @@ function PrivacyPolicy() {
       <div className="container mx-auto px-6 py-16 flex-1 max-w-4xl">
         <h1 className="text-4xl font-bold mb-6">Privacy Policy</h1>
         <p className="text-gray-300 mb-4">
-          We respect your privacy. This summary is for preview only. 
+          We respect your privacy. This summary is for preview only. Replace with your legal policy before launch.
         </p>
         <div className="space-y-4 text-gray-300">
           <p>• We collect account info (email, auth identifiers) to provide the service.</p>

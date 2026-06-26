@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import axios from '../config/api'
+import axios from 'axios'
 import { Download as DownloadIcon, ArrowLeft, FileText, Code, Database, CheckCircle } from 'lucide-react'
 import { AuroraBackground, ParticlesBackground } from '../components/AnimatedBackground'
 import { FadeInText, GradientText } from '../components/AnimatedText'
@@ -29,19 +29,11 @@ function Download() {
     fetchStatus()
   }, [jobId])
 
-  const handleDownload = async (fileType = 'zip', preferredFormat = '') => {
+  const handleDownload = async (fileType = 'zip') => {
     setDownloading(true)
     try {
-      const outputFormat = status?.output_format || status?.outputFormat || 'csv'
-      const isJsonPreferred = outputFormat === 'json'
-      const effectiveFormat = preferredFormat || (isJsonPreferred ? 'json' : 'csv')
-      const preferParam = (fileType === 'train' || fileType === 'test')
-        ? `&format=${effectiveFormat}`
-        : ''
-
-      const response = await axios.get(`/api/download/${jobId}?file_type=${fileType}${preferParam}`, {
-        responseType: 'blob',
-        headers: fileType === 'zip' ? {} : { Accept: 'application/json' }
+      const response = await axios.get(`/api/download/${jobId}?file_type=${fileType}`, {
+        responseType: 'blob'
       })
 
       const url = window.URL.createObjectURL(new Blob([response.data]))
@@ -49,7 +41,7 @@ function Download() {
       link.href = url
       
       const contentDisposition = response.headers['content-disposition']
-      let filename = `stratix_${jobId}.${fileType === 'zip' ? 'zip' : fileType}`
+        let filename = `stratix_${jobId}.${fileType === 'zip' ? 'zip' : fileType}`
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename="?(.+)"?/i)
         if (filenameMatch) filename = filenameMatch[1]
@@ -62,8 +54,7 @@ function Download() {
       window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Download failed:', error)
-      const message = error.response?.data?.detail || 'Download failed. Please try again.'
-      alert(message)
+      alert('Download failed. Please try again.')
     } finally {
       setDownloading(false)
     }
@@ -117,10 +108,6 @@ function Download() {
 
   const stats = status.stats || {}
   const metadata = status.metadata || {}
-  const outputFormat = status.output_format || status.outputFormat || 'csv'
-  const trainName = outputFormat === 'json' ? 'train.json' : 'train.csv'
-  const testName = outputFormat === 'json' ? 'test.json' : 'test.csv'
-  const bothLabel = outputFormat === 'both' ? ' (CSV + JSON)' : ''
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 relative overflow-hidden">
@@ -128,9 +115,9 @@ function Download() {
       <AuroraBackground />
       <ParticlesBackground count={50} />
       
-      <div className="relative z-10 container mx-auto px-4 py-6 sm:py-8">
+      <div className="relative z-10 container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+        <div className="flex items-center justify-between mb-8">
           <button
             onClick={() => navigate('/')}
             className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
@@ -164,7 +151,7 @@ function Download() {
         </FadeInText>
 
         {/* Stats Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
           <FadeInText delay={200}>
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700 hover:border-primary-500/50 transition-all hover:scale-105 hover:shadow-lg hover:shadow-primary-500/20">
               <div className="flex items-center gap-3 mb-2">
@@ -196,7 +183,7 @@ function Download() {
 
         {/* Tabs: Files / Training Code */}
         <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 mb-8">
-          <div className="flex border-b border-gray-700 overflow-x-auto">
+          <div className="flex border-b border-gray-700">
             <button
               className={`px-4 sm:px-6 py-3 text-sm font-medium flex items-center gap-2 ${
                 activeTab === 'files'
@@ -224,7 +211,7 @@ function Download() {
             </button>
           </div>
 
-          <div className="p-4 sm:p-6">
+          <div className="p-6">
             {activeTab === 'files' && (
               <>
                 <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -237,14 +224,14 @@ function Download() {
                       <div className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg">
                         <div className="flex items-center gap-3">
                           <FileText className="w-5 h-5 text-primary-400" />
-                          <span>{outputFormat === 'both' ? 'train.csv / train.json' : trainName}{bothLabel}</span>
+                          <span>train.csv / train.json</span>
                         </div>
                         <span className="text-gray-400">{stats.train_samples?.toLocaleString()} samples</span>
                       </div>
                       <div className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg">
                         <div className="flex items-center gap-3">
                           <FileText className="w-5 h-5 text-purple-400" />
-                          <span>{outputFormat === 'both' ? 'test.csv / test.json' : testName}{bothLabel}</span>
+                          <span>test.csv / test.json</span>
                         </div>
                         <span className="text-gray-400">{stats.test_samples?.toLocaleString()} samples</span>
                       </div>
@@ -270,15 +257,15 @@ function Download() {
 
             {activeTab === 'code' && (
               <div>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+                <div className="flex items-center justify-between mb-4 gap-3">
                   <div className="flex items-center gap-2">
                     <Code className="w-5 h-5 text-green-400" />
                     <h3 className="text-lg font-semibold">Dev-Ready Training Script</h3>
                   </div>
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleDownload('code')}
-                      className="px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs sm:text-sm flex items-center justify-center gap-1"
+                      className="px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs sm:text-sm flex items-center gap-1"
                     >
                       <DownloadIcon className="w-4 h-4" />
                       Download .py
@@ -312,60 +299,29 @@ function Download() {
         </div>
 
         {/* Download Buttons */}
-        <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row gap-4">
           <button
             onClick={() => handleDownload('zip')}
             disabled={downloading}
-            className="w-full px-6 py-4 rounded-xl bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold text-lg shadow-lg shadow-primary-500/50 flex items-center justify-center gap-2"
+            className="flex-1 px-6 py-4 rounded-xl bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold text-lg shadow-lg shadow-primary-500/50 flex items-center justify-center gap-2"
           >
             <DownloadIcon className="w-5 h-5" />
             {downloading ? 'Downloading...' : 'Download All as ZIP'}
           </button>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            <button
-              onClick={() => handleDownload('train', 'csv')}
-              className="px-4 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
-            >
-              <DownloadIcon className="w-4 h-4" />
-              Train CSV
-            </button>
-            <button
-              onClick={() => handleDownload('train', 'json')}
-              className="px-4 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
-            >
-              <DownloadIcon className="w-4 h-4" />
-              Train JSON
-            </button>
-            <button
-              onClick={() => handleDownload('test', 'csv')}
-              className="px-4 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
-            >
-              <DownloadIcon className="w-4 h-4" />
-              Test CSV
-            </button>
-            <button
-              onClick={() => handleDownload('test', 'json')}
-              className="px-4 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
-            >
-              <DownloadIcon className="w-4 h-4" />
-              Test JSON
-            </button>
-            <button
-              onClick={() => handleDownload('metadata')}
-              className="px-4 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
-            >
-              <FileText className="w-4 h-4" />
-              Metadata JSON
-            </button>
-            <button
-              onClick={() => handleDownload('code')}
-              className="px-4 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
-            >
-              <Code className="w-4 h-4" />
-              Training Code
-            </button>
-          </div>
+          <button
+            onClick={() => handleDownload('train')}
+            className="px-6 py-4 rounded-xl bg-gray-700 hover:bg-gray-600 transition-colors flex items-center gap-2"
+          >
+            <DownloadIcon className="w-4 h-4" />
+            Train
+          </button>
+          <button
+            onClick={() => handleDownload('test')}
+            className="px-6 py-4 rounded-xl bg-gray-700 hover:bg-gray-600 transition-colors flex items-center gap-2"
+          >
+            <DownloadIcon className="w-4 h-4" />
+            Test
+          </button>
         </div>
 
         {/* Metadata Preview */}

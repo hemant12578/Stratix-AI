@@ -51,7 +51,7 @@ function Contact() {
                 <MessageSquare className="w-10 h-10 text-purple-400 mb-4" />
                 <h3 className="text-xl font-semibold mb-2">Support</h3>
                 <p className="text-gray-400 mb-4">Get help with your account</p>
-                <a href="/support" className="text-purple-400 hover:text-purple-300">
+                <a href="#" className="text-purple-400 hover:text-purple-300">
                   Visit Support Center
                 </a>
               </div>

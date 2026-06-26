@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from '../config/api'
+import axios from 'axios'
 import { Search, Sparkles, Database, Zap, User, LogOut } from 'lucide-react'
 import { LoginModal } from '../components/LoginModal'
 import { AuroraBackground, ParticlesBackground, GridBackground, WaveBackground } from '../components/AnimatedBackground'
@@ -36,8 +36,7 @@ function Landing() {
     setLoading(true)
     try {
       const response = await axios.get('/api/search', {
-        params: { query: query.trim(), limit: 20 },
-        timeout: 120000
+        params: { query: query.trim(), limit: 20 }
       })
       
       // Store results in sessionStorage

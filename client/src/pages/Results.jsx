@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from '../config/api'
+import axios from 'axios'
 import { ArrowLeft, Check, AlertCircle, Download, Eye } from 'lucide-react'
 import { AuroraBackground, ParticlesBackground } from '../components/AnimatedBackground'
 import { FadeInText } from '../components/AnimatedText'
@@ -10,7 +10,6 @@ function Results() {
   const [results, setResults] = useState(null)
   const [selectedDatasets, setSelectedDatasets] = useState([])
   const [processing, setProcessing] = useState(false)
-  const [outputFormat, setOutputFormat] = useState(() => sessionStorage.getItem('outputFormat') || 'csv')
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -21,31 +20,6 @@ function Results() {
       navigate('/')
     }
   }, [navigate])
-
-  useEffect(() => {
-    const refreshEmptyResults = async () => {
-      if (!results) return
-      const matches = results.matches || []
-      if (matches.length > 0) return
-
-      const savedQuery = sessionStorage.getItem('userQuery')?.trim()
-      if (!savedQuery) return
-
-      try {
-        const response = await axios.get('/api/search', {
-          params: { query: savedQuery, limit: 20 },
-          timeout: 120000
-        })
-        const fresh = response.data || {}
-        sessionStorage.setItem('searchResults', JSON.stringify(fresh))
-        setResults(fresh)
-      } catch (error) {
-        console.error('Failed to refresh empty cached results:', error)
-      }
-    }
-
-    refreshEmptyResults()
-  }, [results])
 
   const toggleDataset = (datasetId) => {
     setSelectedDatasets(prev =>
@@ -63,13 +37,9 @@ function Results() {
 
     setProcessing(true)
     try {
-      sessionStorage.setItem('outputFormat', outputFormat)
       const response = await axios.post('/api/process', {
         dataset_ids: selectedDatasets,
-        requirements: {
-          ...(results?.requirements || {}),
-          output_format: outputFormat
-        }
+        requirements: results?.requirements || {}
       })
 
       navigate(`/processing/${response.data.job_id}`)
@@ -91,10 +61,10 @@ function Results() {
       <AuroraBackground />
       <ParticlesBackground count={40} />
       
-      <div className="relative z-10 container mx-auto px-4 py-6 sm:py-8">
+      <div className="relative z-10 container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-          <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/dashboard')}
               className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
@@ -116,27 +86,6 @@ function Results() {
               Stratix AI
             </h1>
           </div>
-        </div>
-
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
-          <label className="text-sm text-gray-400">Download format</label>
-          <div className="inline-flex rounded-lg bg-gray-800/60 border border-gray-700 p-1">
-            {['csv', 'json', 'both'].map((fmt) => (
-              <button
-                key={fmt}
-                type="button"
-                onClick={() => setOutputFormat(fmt)}
-                className={`px-4 py-2 text-sm rounded-md transition-colors ${
-                  outputFormat === fmt
-                    ? 'bg-primary-600 text-white'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                {fmt.toUpperCase()}
-              </button>
-            ))}
-          </div>
-          <span className="text-xs text-gray-500">Both = CSV + JSON in ZIP</span>
         </div>
 
         {/* Query Display */}
@@ -164,9 +113,9 @@ function Results() {
               }`}
               style={{ animationDelay: `${index * 100}ms` }}
             >
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-xl font-semibold">{match.name || match.dataset_name}</h3>
                     <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary-600/20 text-primary-300">
                       Score: {match.match_score || match.quality_score || 'N/A'}
@@ -208,10 +157,10 @@ function Results() {
                   )}
                 </div>
 
-                <div className="flex flex-row sm:flex-col gap-2 sm:ml-4">
+                <div className="flex flex-col gap-2 ml-4">
                   <button
                     onClick={() => toggleDataset(match.dataset_id || match.id)}
-                    className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition-colors ${
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                       selectedDatasets.includes(match.dataset_id || match.id)
                         ? 'bg-primary-600 text-white'
                         : 'bg-gray-700 hover:bg-gray-600'
@@ -219,16 +168,7 @@ function Results() {
                   >
                     {selectedDatasets.includes(match.dataset_id || match.id) ? 'Selected' : 'Select'}
                   </button>
-                  <button
-                    onClick={() => {
-                      const datasetUrl = match.url || match.dataset_url || match.source_url
-                      if (datasetUrl) {
-                        window.open(datasetUrl, '_blank', 'noopener,noreferrer')
-                      }
-                    }}
-                    disabled={!(match.url || match.dataset_url || match.source_url)}
-                    className="flex-1 sm:flex-none px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-                  >
+                  <button className="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors flex items-center gap-2">
                     <Eye className="w-4 h-4" />
                     Preview
                   </button>
@@ -240,12 +180,12 @@ function Results() {
 
         {/* Process Button */}
         {selectedDatasets.length > 0 && (
-          <div className="fixed bottom-4 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-20 animate-bounce-subtle">
+          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-20 animate-bounce-subtle">
             <FadeInText delay={500}>
               <button
                 onClick={handleProcess}
                 disabled={processing}
-                className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-xl bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold text-base sm:text-lg shadow-lg shadow-primary-500/50 hover:shadow-xl hover:shadow-primary-500/70 transform sm:hover:scale-105 flex items-center justify-center gap-2"
+                className="px-8 py-4 rounded-xl bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold text-lg shadow-lg shadow-primary-500/50 hover:shadow-xl hover:shadow-primary-500/70 transform hover:scale-105 flex items-center gap-2"
               >
                 <Download className="w-5 h-5" />
                 {processing ? 'Processing...' : `Process ${selectedDatasets.length} Dataset${selectedDatasets.length !== 1 ? 's' : ''}`}

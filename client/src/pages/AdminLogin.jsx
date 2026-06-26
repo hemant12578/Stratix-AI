@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import Footer from '../components/Footer'
 import { GradientText } from '../components/AnimatedText'
-import { ADMIN_DASHBOARD_PATH } from '../config/adminPaths'
-import axios from '../config/api'
 
 const isAdminEmail = (email = '') => {
   const allowList = (import.meta.env.VITE_ADMIN_EMAILS || '')
@@ -32,30 +30,15 @@ function AdminLogin() {
     setError('')
     setLoading(true)
     try {
-      // Preferred: backend admin credentials
-      const res = await axios.post('/api/admin/auth/login', { email, password })
-      if (res.data?.token) {
-        sessionStorage.setItem('adminToken', res.data.token)
-        sessionStorage.setItem('adminEmail', email.toLowerCase())
-        sessionStorage.setItem('adminRole', 'admin')
+      await login(email, password)
+      if (!isAdminEmail(email)) {
+        setError('This account is not authorized for admin. Ask an admin to add your email to VITE_ADMIN_EMAILS.')
+        setLoading(false)
+        return
       }
-      navigate(ADMIN_DASHBOARD_PATH, { replace: true })
-    } catch (backendErr) {
-      // Fallback: Firebase admin login for backward compatibility
-      try {
-        await login(email, password)
-        if (!isAdminEmail(email)) {
-          setError('This account is not authorized for admin. Ask admin to add your email.')
-          setLoading(false)
-          return
-        }
-        sessionStorage.removeItem('adminToken')
-        sessionStorage.setItem('adminEmail', email.toLowerCase())
-        sessionStorage.setItem('adminRole', 'admin')
-        navigate(ADMIN_DASHBOARD_PATH, { replace: true })
-      } catch (err) {
-        setError(backendErr?.response?.data?.detail || err?.message || 'Failed to sign in')
-      }
+      navigate('/admin', { replace: true })
+    } catch (err) {
+      setError(err?.message || 'Failed to sign in')
     } finally {
       setLoading(false)
     }
@@ -70,7 +53,7 @@ function AdminLogin() {
             <GradientText text="Admin Login" />
           </h1>
           <p className="text-gray-400 text-sm mb-6">
-            Login with admin email and password. You can create more admin/employee accounts from admin panel.
+            Use an authorized admin email. Configure allowed emails via `VITE_ADMIN_EMAILS` (comma-separated).
           </p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

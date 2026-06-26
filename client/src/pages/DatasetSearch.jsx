@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from '../config/api'
+import axios from 'axios'
 import { Search, Filter, ArrowLeft, Database, Sparkles, TrendingUp } from 'lucide-react'
 import { AuroraBackground, ParticlesBackground } from '../components/AnimatedBackground'
 import { FadeInText, GradientText } from '../components/AnimatedText'
@@ -38,8 +38,7 @@ function DatasetSearch() {
         params: {
           query: query.trim(),
           limit: 50
-        },
-        timeout: 120000
+        }
       })
       
       
@@ -62,9 +61,9 @@ function DatasetSearch() {
       <AuroraBackground />
       <ParticlesBackground count={60} />
 
-      <div className="relative z-10 container mx-auto px-4 py-10 sm:py-16">
+      <div className="relative z-10 container mx-auto px-4 py-16">
         {/* Header */}
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 sm:mb-12">
+        <header className="flex items-center justify-between mb-12">
           <button
             onClick={() => navigate('/dashboard')}
             className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
@@ -103,7 +102,7 @@ function DatasetSearch() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="e.g., sentiment analysis dataset with 50k samples, positive/negative labels"
-                className="w-full px-4 sm:px-6 py-4 sm:py-5 pr-24 sm:pr-32 rounded-xl bg-gray-800/50 backdrop-blur-sm border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base sm:text-lg"
+                className="w-full px-6 py-5 pr-32 rounded-xl bg-gray-800/50 backdrop-blur-sm border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-lg"
                 disabled={loading}
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
