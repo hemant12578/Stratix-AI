@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     # Redis (optional for caching)
     REDIS_URL: Optional[str] = os.getenv("REDIS_URL", "")
     
+    # CORS
+    ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000")
+    
     class Config:
         env_file = ".env"
 
